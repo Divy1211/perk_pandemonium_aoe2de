@@ -7,6 +7,9 @@ This requires installing the [AoE2ScenarioParser](https://github.com/KSneijders/
 
 1. `pip install AoE2ScenarioParser`
 
+# How to run the program:
+Navigate to the `parser_projects/maps/` folder and then do `py perk_pandemonium.py`
+
 # About the Scenario
 
 Perk Pandemonium is a scenario where players can create trade workshops for 200W and 50S and buy the following perks:
@@ -21,5 +24,5 @@ Perk Pandemonium is a scenario where players can create trade workshops for 200W
 8. convert enemy champ to halbs 1kW and 500G
 9. convert enemy archers to skirms 1kW and 500G
 10. swap all enemy siege with petards and petards with trebs for 1kW and 500G
-11. Petrify enemy vils for 500F + 500S (only idle them)
-12. Labor Strike for 1kF+500S for 30s
+11. petrify enemy vils for 500F + 500S (only idle them)
+12. labor strike for 1kF+500S for 30s
