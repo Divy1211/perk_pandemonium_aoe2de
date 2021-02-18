@@ -1,5 +1,6 @@
 # Perk Pandemonium AoE2DE
 This python code can be used to generate a custom scenario called Perk Pandemonium from scratch for the game Age of Empires II: Definitive Edition.
+The ingame mod can be found [here](https://www.ageofempires.com/mods/details/19751/)
 
 # Dependencies
 This requires installing the [AoE2ScenarioParser](https://github.com/KSneijders/AoE2ScenarioParser) library:
@@ -12,13 +13,13 @@ Perk Pandemonium is a scenario where players can create trade workshops for 200W
 
 1. kill all enemy military units for 4kG
 2. kill all villagers for 10kF
-3. Cease Fire for 60s (cooldown of 300s) for 200F+200G
-4. Transform all villagers into EV for 60s for 1kG
+3. cease fire for 60s (cooldown of 300s) for 200F+200G
+4. transform all villagers into EV for 60s for 1kG
 5. kill all enemy castles for 5kF 500G 500S
 6. replace all enemy military with hunting wolves for 2kG
 7. transform arbs -> xbow -> archers -> arbs for 1kG
 8. convert enemy champ to halbs 1kW and 500G
 9. convert enemy archers to skirms 1kW and 500G
 10. swap all enemy siege with petards and petards with trebs for 1kW and 500G
-11 Petrify enemy vils for 500F + 500S (only idle them)
+11. Petrify enemy vils for 500F + 500S (only idle them)
 12. Labor Strike for 1kF+500S for 30s
