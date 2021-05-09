@@ -250,7 +250,7 @@ def implement_koth(NUMBER_OF_PLAYERS, trigger_manager):
     COUNTDOWN_VAR = 247
 
     for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("Set Trickle Res")
+        trigger = trigger_manager.add_trigger(f"Set Trickle Res p({player})")
         trigger.new_effect.modify_resource(
             quantity=1,
             tribute_list=Attribute.FOOD_TRICKLE_FROM_MONUMENT,
