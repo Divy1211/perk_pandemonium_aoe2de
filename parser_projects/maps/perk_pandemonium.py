@@ -1,1038 +1,1792 @@
 from parser_projects.parser_imports import *
 from parser_projects.help_functions import *
-NUMBER_OF_PLAYERS = 8
-inname = f"BLANK_SCENARIO_FILE_NAME_FOR_APPROPRIATE_NUMBER_OF_PLAYERS"
-outname = f"OUTPUT_SCENARIO_FILE_NAME"
-scenario = AoE2Scenario.from_file(input_path+inname)
-trigger_manager = scenario.trigger_manager
 
-# define all constants
+for NUMBER_OF_PLAYERS in range(1, 9):
+    inname = f"Perk Pandemonium {NUMBER_OF_PLAYERS}P.aoe2scenario"
+    outname = f"Perk Pandemonium {NUMBER_OF_PLAYERS}P.aoe2scenario"
+    scenario = AoE2DEScenario.from_file(input_path + inname)
+    trigger_manager = scenario.trigger_manager
+    trigger_manager.triggers = []
 
-COLOUR = ["BLUE", "RED", "GREEN", "YELLOW", "AQUA", "PURPLE", "GREY", "ORANGE"]
+    # define all constants, CD stands for COOLDOWN
 
-CEASE_FIRE_DURATION = 60
-CEASE_FIRE_CD = 300
-EV_DURATION = 60
-STRIKE_DURATION = 30
-TRADE_WORKSHOP_TRAIN_TIME = 60
+    COLOUR = ["BLUE", "RED", "GREEN", "YELLOW", "AQUA", "PURPLE", "GREY", "ORANGE"]
 
-# variable ids
-CEASE_FIRE_CD_VAR = 0
-CEASE_FIRE_PLAYER_CD_VARS = [i for i in range(1, NUMBER_OF_PLAYERS+1)]
-EV_CD_VAR = 9
-PAGE_VAR = [247+i for i in range(1, NUMBER_OF_PLAYERS+1)]
-STRIKE_CD_VAR = [9+i for i in range(1, NUMBER_OF_PLAYERS+1)]
+    CEASE_FIRE_DURATION = 60
+    CEASE_FIRE_CD = 300
+    EV_DURATION = 60
+    STRIKE_DURATION = 30
+    TRADE_WORKSHOP_TRAIN_TIME = 60
+
+    # variable ids
+    CEASE_FIRE_CD_VAR = 0
+    CEASE_FIRE_PLAYER_CD_VAR = [i for i in range(1, NUMBER_OF_PLAYERS + 1)]
+    EV_CD_VAR = 9
+    STRIKE_CD_VAR = [9 + i for i in range(1, NUMBER_OF_PLAYERS + 1)]
+    DOPE_CD_VAR = [17 + i for i in range(1, NUMBER_OF_PLAYERS+1)]
+    DOPE_PLAYER_CD_VAR = [25 + i for i in range(1, NUMBER_OF_PLAYERS+1)]
+    PAGE_VAR = [247 + i for i in range(1, NUMBER_OF_PLAYERS + 1)]
+
+    KILL_ALL_VILLAGERS_COST = [1000*(NUMBER_OF_PLAYERS-1), 0, 0, 0]
+    KILL_ALL_MILITARY_COST = [0, 0, 500*(NUMBER_OF_PLAYERS-1), 0]
+    CEASE_FIRE_COST = [0, 200, 200, 0]
+    EV_COST = [0, 0, 1000, 0]
+    KILL_ALL_CASTLES_COST = [0, 5000, 0, 200*(NUMBER_OF_PLAYERS-1)]
+    REPLACE_MILITARY_WOLF_COST = [0, 0, 250*(NUMBER_OF_PLAYERS-1), 0]
+    CYCLE_ARCHER_COST = [0, 0, 125*(NUMBER_OF_PLAYERS-1), 0]
+    REPLACE_MAA_SPEAR_COST = [0, 1000, 100*(NUMBER_OF_PLAYERS-1), 0]
+    REPLACE_ARCHER_SKIRM_COST = [0, 800, 100*(NUMBER_OF_PLAYERS-1), 0]
+    REPLACE_KT_LC = [0, 1500, 100*(NUMBER_OF_PLAYERS-1), 0]
+    REPLACE_CAM_LC = [0, 1200, 100*(NUMBER_OF_PLAYERS-1), 0]
+    REPLACE_ELE_LC = [0, 2000, 150*(NUMBER_OF_PLAYERS-1), 0]
+    REPLACE_SL_LC = [0, 1300, 100*(NUMBER_OF_PLAYERS-1), 0]
+    REPLACE_SIEGE_PETARD_TREB_COST = [0, 1000, 100*(NUMBER_OF_PLAYERS-1), 0]
+    STOP_ENEMY_VILLAGERS_COST = [500, 0, 75*(NUMBER_OF_PLAYERS-1), 0]
+    LABOUR_STRIKE_COST = [1000, 0, 0, 100*(NUMBER_OF_PLAYERS-1)]
+    DOPE_COST = [0, 1000, 200, 200]
+    TRADE_WORKSHOP_COST = [0, 200, 0, 50]
+
+    PAGES = [[]]
+    CURRENT_PAGE = 0
+    TRIGGER_UNITS = sorted([(hero.ID, hero.ICON_ID, hero.DEAD_ID, False) for hero in HeroInfo], key=lambda x : HeroInfo(x).name)
+    TRIGGER_UNITS = [hero[0] for hero in TRIGGER_UNITS]
+    CURRENT_TRIGGER_UNIT = 0
+    BUTTON_LOCATIONS = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13]
+    HOTKEY_ID_MAP = {
+        1: 16344,
+        2: 16157,
+        3: 16487,
+        4: 16464,
+        5: 16144,
+        6: 16149,
+        7: 16131,
+        8: 16161,
+        9: 16138,
+        10: 16176,
+        11: 16164,
+        12: 16182,
+        13: 16159,
+        14: 19054
+    }
+    CURRENT_BUTTON_LOCATION = 0
+    CD_HEROES = []
+    CD_VARS = []
+
+    # misc
+    GARRISONABLE_BY_ALL = [BuildingInfo.TOWN_CENTER.ID, BuildingInfo.WATCH_TOWER.ID, BuildingInfo.GUARD_TOWER.ID,
+                                 BuildingInfo.KEEP.ID, BuildingInfo.BOMBARD_TOWER.ID, BuildingInfo.HOUSE.ID,
+                                 BuildingInfo.DONJON.ID, BuildingInfo.KREPOST.ID, BuildingInfo.CASTLE.ID, UnitInfo.BATTERING_RAM.ID,
+                                 UnitInfo.CAPPED_RAM.ID, UnitInfo.SIEGE_RAM.ID, UnitInfo.SIEGE_TOWER.ID, UnitInfo.TRANSPORT_SHIP.ID]
+
+    GARRISONABLE_BY_MILITARY = [BuildingInfo.ARCHERY_RANGE.ID, BuildingInfo.BARRACKS.ID, BuildingInfo.STABLE.ID,
+                             BuildingInfo.SIEGE_WORKSHOP.ID, BuildingInfo.DOCK.ID, BuildingInfo.MONASTERY.ID]
+
+    SIEGE_UNITS = [UnitInfo.MANGONEL.ID, UnitInfo.ONAGER.ID, UnitInfo.SIEGE_ONAGER.ID, UnitInfo.SIEGE_TOWER.ID,
+                   UnitInfo.BATTERING_RAM.ID, UnitInfo.CAPPED_RAM.ID, UnitInfo.SIEGE_RAM.ID, UnitInfo.SCORPION.ID,
+                   UnitInfo.HEAVY_SCORPION.ID, UnitInfo.BOMBARD_CANNON.ID, UnitInfo.TREBUCHET.ID,
+                   UnitInfo.TREBUCHET_PACKED.ID, UnitInfo.ORGAN_GUN.ID, UnitInfo.ELITE_ORGAN_GUN.ID]
+
+    def prepare_unit(prefix: str,
+                    trigger_unit: int,
+                    train_location: int,
+                    train_button: int,
+                    train_time: int,
+                    cost: list,
+                    description: str,
+                    hotkey_id: int = -1):
+
+        hotkey_id = HOTKEY_ID_MAP[train_button] if hotkey_id == -1 else hotkey_id
+
+        trigger = trigger_manager.add_trigger(f"{prefix}Change Hotkey")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.modify_attribute(
+                                  quantity=hotkey_id,
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  item_id=trigger_unit,
+                                  operation=Operation.SET,
+                                  object_attributes=58
+                               )
+
+        trigger = trigger_manager.add_trigger(f"{prefix}Change Train Location")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.change_train_location(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  object_list_unit_id_2=train_location,
+                                  button_location=train_button
+                               )
 
 
-KILL_ALL_VILLAGERS_COST = [10000, 0, 0, 0]
-KILL_ALL_MILITARY_COST = [0, 0, 4000, 0]
-CEASE_FIRE_COST = [0, 200, 200, 0]
-EV_COST = [0, 0, 1000, 0]
-KILL_ALL_CASTLES_COST = [0, 5000, 500, 500]
-REPLACE_MILITARY_WOLF_COST = [0, 0, 2000, 0]
-CYCLE_ARCHER_COST = [0, 0, 1000, 0]
-REPLACE_MAA_SPEAR_COST = [0, 1000, 500, 0]
-REPLACE_ARCHER_SKIRM_COST = [0, 1000, 500, 0]
-REPLACE_SIEGE_PETARD_TREB_COST = [0, 1000, 500, 0]
-STOP_ENEMY_VILLAGERS_COST = [500, 0, 500, 0]
-LABOUR_STRIKE_COST = [0, 1000, 0, 500]
-TRADE_WORKSHOP_COST = [0, 200, 0, 50]
+        trigger = trigger_manager.add_trigger(f"{prefix}Change Cost Pre")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.modify_attribute(
+                                  quantity=0,
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  item_id=trigger_unit,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.GOLD_COSTS
+                               )
+            trigger.new_effect.modify_attribute(
+                                  quantity=0,
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  item_id=trigger_unit,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.WOOD_COSTS
+                               )
+            trigger.new_effect.modify_attribute(
+                                  quantity=0,
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  item_id=trigger_unit,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.FOOD_COSTS
+                               )
+            trigger.new_effect.modify_attribute(
+                                  quantity=0,
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  item_id=trigger_unit,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.STONE_COSTS
+                               )
 
-# misc
-GARRISONABLE = [Building.TOWN_CENTER, Building.WATCH_TOWER, Building.GUARD_TOWER, Building.KEEP, Building.BOMBARD_TOWER, Building.HOUSE]
-GARRISONABLE_MILITARY = [Building.ARCHERY_RANGE, Building.BARRACKS, Building.STABLE, Building.SIEGE_WORKSHOP, Building.KREPOST, Building.CASTLE, Building.DOCK, Building.MONASTERY]
-SIEGE_UNITS = [Unit.MANGONEL, Unit.ONAGER, Unit.SIEGE_ONAGER, Unit.SIEGE_TOWER, Unit.BATTERING_RAM, Unit.CAPPED_RAM, Unit.SIEGE_RAM, Unit.SCORPION, Unit.HEAVY_SCORPION, Unit.BOMBARD_CANNON, Unit.TREBUCHET, Unit.TREBUCHET_PACKED, Unit.ORGAN_GUN, Unit.ELITE_ORGAN_GUN]
-VILLAGER = [Unit.VILLAGER_MALE, Unit.VILLAGER_FEMALE, Unit.BUILDER, 212, Unit.REPAIRER, 222, Unit.FARMER, 214, Unit.HUNTER, 216, Unit.FORAGER, 354, Unit.FISHERMAN, 57, Unit.SHEPHERD, 590, Unit.GOLD_MINER, 581, Unit.STONE_MINER, 220, Unit.LUMBERJACK, 218]
-VILLAGER_DEAD = [224, 221, 225, 213, 225, 213, 226, 215, 227, 217, 353, 355, 58, 60, 591, 593, 229, 221, 229, 221, 228, 219]
 
+        trigger = trigger_manager.add_trigger(f"{prefix}Change Cost")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.change_object_cost(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  food=cost[0],
+                                  wood=cost[1],
+                                  stone=cost[3],
+                                  gold=cost[2]
+                               )
 
-def enable_unit(prefix, trigger_unit, train_location, train_button, train_time, cost, description):
-    trigger = trigger_manager.add_trigger("{0} Change Train Location".format(prefix))
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_TRAIN_LOCATION)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect.object_list_unit_id_2 = train_location
-        effect.button_location = train_button
+        trigger = trigger_manager.add_trigger(f"{prefix}Change Train Time")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.modify_attribute(
+                                  quantity=train_time,
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  item_id=trigger_unit,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.TRAIN_TIME
+                               )
 
-    trigger = trigger_manager.add_trigger("Change Cost pre")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect.item_id = trigger_unit
-        effect.object_attributes = ObjectAttribute.GOLD_COSTS
-        effect.operation = Operation.SET
-        effect.quantity = 0
+        trigger = trigger_manager.add_trigger(f"{prefix}Change Description")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.change_object_description(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  message=description
+                               )
 
-    trigger = trigger_manager.add_trigger("{0} Change Cost".format(prefix))
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_OBJECT_COST)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect.food = cost[0]
-        effect.wood = cost[1]
-        effect.gold = cost[2]
-        effect.stone = cost[3]
+    def setup():
+        trigger = trigger_manager.add_trigger("==== Setup ====")
+        correct_scout(NUMBER_OF_PLAYERS, trigger_manager)
 
-    trigger = trigger_manager.add_trigger("{0} Change Train Time".format(prefix))
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.quantity = train_time
-        effect.object_list_unit_id = trigger_unit
-        effect.source_player = player
-        effect.item_id = trigger_unit
-        effect.operation = Operation.SET
-        effect.object_attributes = ObjectAttribute.TRAIN_TIME
+        scenario.sections['Options'].disabled_tech_ids_player_1 = [TechInfo.FREE_CARTOGRAPHY.ID]
+        scenario.sections['Options'].disabled_tech_ids_player_2 = [TechInfo.FREE_CARTOGRAPHY.ID]
+        scenario.sections['Options'].disabled_tech_ids_player_3 = [TechInfo.FREE_CARTOGRAPHY.ID]
+        scenario.sections['Options'].disabled_tech_ids_player_4 = [TechInfo.FREE_CARTOGRAPHY.ID]
+        scenario.sections['Options'].disabled_tech_ids_player_5 = [TechInfo.FREE_CARTOGRAPHY.ID]
+        scenario.sections['Options'].disabled_tech_ids_player_6 = [TechInfo.FREE_CARTOGRAPHY.ID]
+        scenario.sections['Options'].disabled_tech_ids_player_7 = [TechInfo.FREE_CARTOGRAPHY.ID]
+        scenario.sections['Options'].disabled_tech_ids_player_8 = [TechInfo.FREE_CARTOGRAPHY.ID]
+        scenario.sections['Options'].per_player_number_of_disabled_techs = [1]*8+[0]*8
 
-    trigger = trigger_manager.add_trigger("{0} Change Description".format(prefix))
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_OBJECT_DESCRIPTION)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect.message = "{0}".format(description)
-def setup():
-    trigger = trigger_manager.add_trigger("==== Setup ====")
-    correct_scout(NUMBER_OF_PLAYERS, trigger_manager)
+        trigger = trigger_manager.add_trigger("Disable Cartography")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.enable_disable_technology(
+                                  source_player=player,
+                                  technology=TechInfo.CARTOGRAPHY.ID,
+                                  enabled=0,
+                                  item_id=TechInfo.CARTOGRAPHY.ID
+                               )
 
-    trigger = trigger_manager.add_trigger("Enable Trade Workshop")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.ENABLE_DISABLE_OBJECT)
-        effect.source_player = player
-        effect.item_id = Building.TRADE_WORKSHOP
-        effect.enabled_or_victory = 1
-        effect.object_list_unit_id = Building.TRADE_WORKSHOP
+        trigger = trigger_manager.add_trigger("Disable Wonder")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.enable_disable_object(
+                                  object_list_unit_id=BuildingInfo.WONDER.ID,
+                                  source_player=player,
+                                  enabled=False,
+                                  item_id=BuildingInfo.WONDER.ID
+                               )
 
-    trigger = trigger_manager.add_trigger("Disable Carto")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.ENABLE_DISABLE_TECHNOLOGY)
-        effect.source_player = player
-        effect.technology = Tech.CARTOGRAPHY
-        effect.item_id = Tech.CARTOGRAPHY
-        effect.enabled_or_victory = 0
+        trigger = trigger_manager.add_trigger("TW Enable Trade Workshop")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.enable_disable_object(
+                                  object_list_unit_id=BuildingInfo.TRADE_WORKSHOP.ID,
+                                  source_player=player,
+                                  enabled=True,
+                                  item_id=BuildingInfo.TRADE_WORKSHOP.ID
+                               )
+        description = "Build Trade Workshop (<Cost>)\nAllows you to buy "+\
+                      "special perks\n<hp> <attack> <armor> <piercearmor> <garrison> LoS: 4"
 
-        effect = trigger.add_effect(Effect.ENABLE_DISABLE_TECHNOLOGY)
-        effect.source_player = player
-        effect.technology = Tech.FREE_CARTOGRAPHY
-        effect.item_id = Tech.FREE_CARTOGRAPHY
-        effect.enabled_or_victory = 0
+        prepare_unit("TW ", BuildingInfo.TRADE_WORKSHOP.ID,
+                    UnitInfo.VILLAGER_MALE.ID,
+                    ButtonLocation.r3c2,
+                    TRADE_WORKSHOP_TRAIN_TIME,
+                    TRADE_WORKSHOP_COST,
+                    description)
 
-        effect = trigger.add_effect(Effect.MODIFY_RESOURCE)
-        effect.source_player = player
-        effect.quantity = 0
-        effect.tribute_list = Attribute.REVEAL_ALLY
-        effect.operation = Operation.SET
+        add_civ_bonuses(NUMBER_OF_PLAYERS, trigger_manager)
+        handle_chinese(NUMBER_OF_PLAYERS, trigger_manager)
 
-    trigger = trigger_manager.add_trigger("Disable Wonder")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.ENABLE_DISABLE_OBJECT)
-        effect.source_player = player
-        effect.item_id = Building.WONDER
-        effect.enabled_or_victory = 0
-        effect.object_list_unit_id = Building.WONDER
+    def perk_setup(name: str,
+                   trigger_unit: int,
+                   train_location: int,
+                   train_button: int,
+                   cost: list,
+                   description: str,
+                   enabled: int,
+                   icon_unit: int):
 
-    trigger = trigger_manager.add_trigger("Change Train Location")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_TRAIN_LOCATION)
-        effect.source_player = player
-        effect.object_list_unit_id = Building.TRADE_WORKSHOP
-        effect.object_list_unit_id_2 = Unit.VILLAGER_MALE
-        effect.button_location = 12
+        trigger = trigger_manager.add_trigger(f"==== {name} ====")
+        if enabled:
+            trigger = trigger_manager.add_trigger("Enable")
+            for player in range(1, NUMBER_OF_PLAYERS+1):
+                trigger.new_effect.enable_disable_object(
+                                      object_list_unit_id=trigger_unit,
+                                      source_player=player,
+                                      enabled=True,
+                                      item_id=trigger_unit
+                                   )
 
-    trigger = trigger_manager.add_trigger("Change Cost pre")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.source_player = player
-        effect.object_list_unit_id = Building.TRADE_WORKSHOP
-        effect.item_id = Building.TRADE_WORKSHOP
-        effect.object_attributes = ObjectAttribute.GOLD_COSTS
-        effect.operation = Operation.SET
-        effect.quantity = 0
+        prepare_unit("", trigger_unit, train_location, train_button, 0, cost, description)
 
-    trigger = trigger_manager.add_trigger("Change Cost")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_OBJECT_COST)
-        effect.source_player = player
-        effect.object_list_unit_id = Building.TRADE_WORKSHOP
-        effect.food = TRADE_WORKSHOP_COST[0]
-        effect.wood = TRADE_WORKSHOP_COST[1]
-        effect.gold = TRADE_WORKSHOP_COST[2]
-        effect.stone = TRADE_WORKSHOP_COST[3]
-
-    trigger = trigger_manager.add_trigger("Change Train Time")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.quantity = TRADE_WORKSHOP_TRAIN_TIME
-        effect.object_list_unit_id = Building.TRADE_WORKSHOP
-        effect.source_player = player
-        effect.item_id = Building.TRADE_WORKSHOP
-        effect.operation = Operation.SET
-        effect.object_attributes = ObjectAttribute.TRAIN_TIME
-
-    trigger = trigger_manager.add_trigger("Change Description")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_OBJECT_DESCRIPTION)
-        effect.source_player = player
-        effect.object_list_unit_id = Building.TRADE_WORKSHOP
-        effect.message = "Build Trade Workshop (<Cost>)\nAllows you to buy special perks\n<hp> <attack> <armor> <piercearmor> <garrison> LoS: 4"
-
-    add_civ_bonuses(NUMBER_OF_PLAYERS, trigger_manager)
-def perk_setup(name, cost, trigger_unit, train_button, description, enabled, icon_unit):
-    trigger = trigger_manager.add_trigger("==== {0} ====".format(name))
-    if enabled:
-        trigger = trigger_manager.add_trigger("Enable")
+        trigger = trigger_manager.add_trigger("Change Icon")
         for player in range(1, NUMBER_OF_PLAYERS + 1):
-            effect = trigger.add_effect(Effect.ENABLE_DISABLE_OBJECT)
-            effect.source_player = player
-            effect.item_id = trigger_unit
-            effect.enabled_or_victory = 1
-            effect.object_list_unit_id = trigger_unit
+            trigger.new_effect.modify_attribute(
+                                  quantity=icon_unit,
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  item_id=trigger_unit,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.ICON_ID
+                               )
 
-    trigger = trigger_manager.add_trigger("Change Train Location")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_TRAIN_LOCATION)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect.object_list_unit_id_2 = Building.TRADE_WORKSHOP
-        effect.button_location = train_button
+        trigger = trigger_manager.add_trigger("Change Pop Requirement")
+        for player in range(1, NUMBER_OF_PLAYERS + 1):
+            trigger.new_effect.modify_attribute(
+                                  quantity=0,
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  item_id=trigger_unit,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.AMOUNT_OF_1ST_RESOURCES
+                               )
 
-    trigger = trigger_manager.add_trigger("Change Icon")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.source_player = player
-        effect.quantity = icon_unit
-        effect.object_list_unit_id = trigger_unit
-        effect.item_id = trigger_unit
-        effect.operation = Operation.SET
-        effect.object_attributes = 25
+    def page_setup(trigger_unit: int,
+                   pages: list):
 
-    trigger = trigger_manager.add_trigger("Change Cost pre")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect.item_id = trigger_unit
-        effect.object_attributes = ObjectAttribute.GOLD_COSTS
-        effect.operation = Operation.SET
-        effect.quantity = 0
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Set Page Vars p({player})")
+            for var in PAGE_VAR:
+                trigger.new_effect.change_variable(
+                                      quantity=1,
+                                      operation=Operation.SET,
+                                      variable=var
+                                   )
 
-    trigger = trigger_manager.add_trigger("Change Cost")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_OBJECT_COST)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect.food = cost[0]
-        effect.wood = cost[1]
-        effect.gold = cost[2]
-        effect.stone = cost[3]
+        for page in pages:
+            page_no = pages.index(page)+1
+            trigger = trigger_manager.add_trigger(f"---- Page {page_no} ----")
+            activation_trigger = []
+            for player in range(1, NUMBER_OF_PLAYERS + 1):
+                trigger = trigger_manager.add_trigger(f"Is On Page {page_no} p({player})")
+                trigger.looping = True
+                activation_trigger.append(trigger)
 
-    trigger = trigger_manager.add_trigger("Change Train Time")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.quantity = 0
-        effect.object_list_unit_id = trigger_unit
-        effect.source_player = player
-        effect.item_id = trigger_unit
-        effect.operation = Operation.SET
-        effect.object_attributes = ObjectAttribute.TRAIN_TIME
+                trigger.new_condition.own_objects(
+                                      quantity=1,
+                                      object_list=trigger_unit,
+                                      source_player=player
+                                   )
+                trigger.new_condition.variable_value(
+                                      quantity=page_no,
+                                      variable=PAGE_VAR[player-1],
+                                      comparison=Comparison.EQUAL
+                                   )
+                trigger.new_effect.remove_object(
+                                      object_list_unit_id=trigger_unit,
+                                      source_player=player
+                                   )
 
-    trigger = trigger_manager.add_trigger("Change Pop Requirement")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.quantity = 0
-        effect.object_list_unit_id = trigger_unit
-        effect.source_player = player
-        effect.item_id = trigger_unit
-        effect.operation = Operation.SET
-        effect.object_attributes = ObjectAttribute.AMOUNT_OF_1ST_RESOURCES
+                if page_no == len(pages):
+                    trigger.new_effect.change_variable(
+                        quantity=1,
+                        operation=Operation.SET,
+                        variable=PAGE_VAR[player - 1]
+                    )
 
-    trigger = trigger_manager.add_trigger("Change Description")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.CHANGE_OBJECT_DESCRIPTION)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect.message = "{0}".format(description)
-def kill_all_villagers(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("kill villagers (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Unit.VILLAGER_MALE
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has killed all enemy villagers!".format(player, COLOUR[player-1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            for building in GARRISONABLE[:]+[Building.CASTLE, Building.KREPOST]:
-                effect = trigger.add_effect(Effect.UNLOAD)
-                effect.object_list_unit_id = building
-                effect.source_player = affectedplayer
-                effect.location_x = 1
-                effect.location_y = 1
-            effect = trigger.add_effect(Effect.KILL_OBJECT)
-            effect.source_player = affectedplayer
-            effect.object_type = 3
-def kill_all_military(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("kill military (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Building.BARRACKS
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has killed all enemy military!".format(player, COLOUR[player-1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                for building in GARRISONABLE+GARRISONABLE_MILITARY:
-                    effect = trigger.add_effect(Effect.UNLOAD)
-                    effect.object_list_unit_id = building
-                    effect.source_player = affectedplayer
-                    effect.location_x = 1
-                    effect.location_y = 1
-                effect = trigger.add_effect(Effect.KILL_OBJECT)
-                effect.source_player = affectedplayer
-                effect.object_type = 4
-def cease_fire(trigger_unit):
-    trigger = trigger_manager.add_trigger("make peace")
-    trigger.enabled = 0
-    trigger_id1 = trigger.trigger_id
-    for source_player in range(1, NUMBER_OF_PLAYERS+1):
-        for target_player in range(1, NUMBER_OF_PLAYERS+1):
-            if source_player != target_player:
-                effect = trigger.add_effect(Effect.CHANGE_DIPLOMACY)
-                effect.diplomacy = DiplomacyState.ALLY
-                effect.source_player = source_player
-                effect.target_player = target_player
+                else:
+                    trigger.new_effect.change_variable(
+                        quantity=1,
+                        operation=Operation.ADD,
+                        variable=PAGE_VAR[player-1]
+                    )
 
-    trigger = trigger_manager.add_trigger("make war")
-    trigger.enabled = 0
-    condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-    condition.amount_or_quantity = 0
-    condition.variable = CEASE_FIRE_CD_VAR
-    condition.inverted = 0
-    condition.comparison = Comparison.EQUAL
-    effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-    effect.object_list_unit_id = GaiaUnit.HAWK
-    effect.source_player = Player.GAIA
-    effect.display_time = 10
-    effect.instruction_panel_position = PanelLocation.TOP
-    effect.message = "Cease Fire Has Ended!"
-    for source_player in range(1, NUMBER_OF_PLAYERS+1):
-        for target_player in range(1, NUMBER_OF_PLAYERS+1):
-            if source_player != target_player:
-                effect = trigger.add_effect(Effect.CHANGE_DIPLOMACY)
-                effect.diplomacy = DiplomacyState.ENEMY
-                effect.source_player = source_player
-                effect.target_player = target_player
-    trigger_id2 = trigger.trigger_id
+            for player in range(1, NUMBER_OF_PLAYERS + 1):
+                trigger = trigger_manager.add_trigger(f"Disable Units Page {page_no} p({player})")
+                trigger.enabled = False
+                for unit in page:
+                    trigger.new_effect.enable_disable_object(
+                                          object_list_unit_id=unit,
+                                          source_player=player,
+                                          enabled=False,
+                                          item_id=unit
+                                       )
+                activation_trigger[player-1].new_effect.activate_trigger(
+                                      trigger_id=trigger.trigger_id
+                                   )
 
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("cease fire (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-        condition.amount_or_quantity = 0
-        condition.variable = CEASE_FIRE_PLAYER_CD_VARS[player-1]
-        condition.inverted = 0
-        condition.comparison = Comparison.EQUAL
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.ENABLE_DISABLE_OBJECT)
-        effect.item_id = trigger_unit
-        effect.object_list_unit_id = trigger_unit
-        effect.enabled_or_victory = 0
-        effect.source_player = player
-        effect = trigger.add_effect(Effect.CHANGE_VARIABLE)
-        effect.quantity = CEASE_FIRE_CD
-        effect.from_variable = CEASE_FIRE_PLAYER_CD_VARS[player-1]
-        effect.operation = Operation.SET
-        effect = trigger.add_effect(Effect.CHANGE_VARIABLE)
-        effect.quantity = CEASE_FIRE_DURATION
-        effect.from_variable = CEASE_FIRE_CD_VAR
-        effect.operation = Operation.ADD
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = GaiaUnit.HAWK
-        effect.source_player = Player.GAIA
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has called for a cease fire!".format(player, COLOUR[player-1])
-        effect = trigger.add_effect(Effect.ACTIVATE_TRIGGER)
-        effect.trigger_id = trigger_id1
-        effect = trigger.add_effect(Effect.ACTIVATE_TRIGGER)
-        effect.trigger_id = trigger.trigger_id+2
-        effect = trigger.add_effect(Effect.ACTIVATE_TRIGGER)
-        effect.trigger_id = trigger_id2
+            next_page = pages[page_no] if page_no < len(pages) else pages[0]
 
-        trigger = trigger_manager.add_trigger("Cooldown (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-        condition.variable = CEASE_FIRE_PLAYER_CD_VARS[player-1]
-        condition.amount_or_quantity = 0
-        condition.comparison = Comparison.LARGER
-        condition.inverted = 0
-        condition = trigger.add_condition(Condition.TIMER)
-        condition.timer = 1
-        effect = trigger.add_effect(Effect.CHANGE_VARIABLE)
-        effect.from_variable = CEASE_FIRE_PLAYER_CD_VARS[player-1]
-        effect.operation = Operation.SUBTRACT
-        effect.quantity = 1
+            triggers = []
+            for player in range(1, NUMBER_OF_PLAYERS+1):
+                triggers.append(trigger_manager.add_trigger(f"Enable Units Page {pages.index(next_page)+1} p({player})"))
 
-        trigger = trigger_manager.add_trigger("Enable Unit p({0})".format(player))
-        trigger.enabled = 0
-        condition = trigger.add_condition(Condition.TIMER)
-        condition.timer = CEASE_FIRE_CD
-        effect = trigger.add_effect(Effect.ENABLE_DISABLE_OBJECT)
-        effect.item_id = trigger_unit
-        effect.object_list_unit_id = trigger_unit
-        effect.enabled_or_victory = 1
-        effect.source_player = player
+            for player in range(1, NUMBER_OF_PLAYERS + 1):
+                trigger = triggers[player-1]
+                trigger.enabled = False
+                for unit in next_page:
+                    if unit not in CD_HEROES:
+                        trigger.new_effect.enable_disable_object(
+                            object_list_unit_id=unit,
+                            source_player=player,
+                            enabled=True,
+                            item_id=unit
+                        )
+                    else:
+                        trigger2 = trigger_manager.add_trigger(f"Enable Unit {f'{unit:>4.0f}'.replace(' ', '0')} p({player})")
+                        trigger2.enabled = False
+                        trigger2.new_condition.variable_value(
+                            quantity=0,
+                            variable=CD_VARS[CD_HEROES.index(unit)][player - 1],
+                            comparison=Comparison.EQUAL
+                        )
+                        trigger2.new_effect.enable_disable_object(
+                            object_list_unit_id=unit,
+                            source_player=player,
+                            enabled=True,
+                            item_id=unit
+                        )
+                        trigger.new_effect.activate_trigger(
+                                              trigger_id=trigger2.trigger_id
+                                           )
 
-    trigger = trigger_manager.add_trigger("cease fire")
-    trigger.looping = 1
-    trigger.short_description = "Cease Fire Ends in: <Variable {0}>s".format(CEASE_FIRE_CD_VAR)
-    trigger.description = trigger.short_description
-    trigger.display_as_objective = 1
-    trigger.display_on_screen = 1
-    condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-    condition.variable = CEASE_FIRE_CD_VAR
-    condition.amount_or_quantity = 0
-    condition.comparison = Comparison.LARGER
-    condition.inverted = 0
-    condition = trigger.add_condition(Condition.TIMER)
-    condition.timer = 1
-    effect = trigger.add_effect(Effect.CHANGE_VARIABLE)
-    effect.from_variable = CEASE_FIRE_CD_VAR
-    effect.operation = Operation.SUBTRACT
-    effect.quantity = 1
-def exploding_villagers(trigger_unit):
-    trigger = trigger_manager.add_trigger("Set Sab attribs")
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.object_list_unit_id = Hero.SABOTEUR
-        effect.item_id = Hero.SABOTEUR
-        effect.source_player = player
-        effect.operation = Operation.SET
-        effect.object_attributes = ObjectAttribute.HIT_POINTS
-        effect.quantity = -2
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.object_list_unit_id = Hero.SABOTEUR
-        effect.item_id = Hero.SABOTEUR
-        effect.source_player = player
-        effect.operation = Operation.SET
-        effect.object_attributes = ObjectAttribute.BLAST_LEVEL
-        effect.quantity = 1
-        effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-        effect.object_list_unit_id = Hero.SABOTEUR
-        effect.item_id = Hero.SABOTEUR
-        effect.source_player = player
-        effect.operation = Operation.SET
-        effect.object_attributes = ObjectAttribute.MAX_RANGE
-        effect.quantity = 2
 
-    trigger = trigger_manager.add_trigger("Activate EV")
-    trigger_id1 = trigger.trigger_id
-    trigger.enabled = 0
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        for vil in VILLAGER:
-            effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-            effect.object_list_unit_id = vil
-            effect.item_id = vil
-            effect.source_player = player
-            effect.operation = Operation.SET
-            effect.object_attributes = ObjectAttribute.DEAD_UNIT_ID
-            effect.quantity = Hero.SABOTEUR
+                activation_trigger[player-1].new_effect.activate_trigger(
+                                      trigger_id=trigger.trigger_id
+                                   )
 
-    trigger = trigger_manager.add_trigger("Deactivate EV")
-    trigger_id2 = trigger.trigger_id
-    trigger.enabled = 0
-    condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-    condition.amount_or_quantity = 0
-    condition.variable = EV_CD_VAR
-    condition.inverted = 0
-    condition.comparison = Comparison.EQUAL
-    effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-    effect.object_list_unit_id = Hero.SABOTEUR
-    effect.source_player = Player.GAIA
-    effect.display_time = 10
-    effect.instruction_panel_position = PanelLocation.TOP
-    effect.message = "Exploding Villagers Has passed!"
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        for i in range(0, len(VILLAGER)):
-            effect = trigger.add_effect(Effect.MODIFY_ATTRIBUTE)
-            effect.object_list_unit_id = VILLAGER[i]
-            effect.item_id = VILLAGER[i]
-            effect.source_player = player
-            effect.operation = Operation.SET
-            effect.object_attributes = ObjectAttribute.DEAD_UNIT_ID
-            effect.quantity = VILLAGER_DEAD[i]
+    def update_location_unit():
+        global CURRENT_BUTTON_LOCATION, CURRENT_TRIGGER_UNIT, CURRENT_PAGE
+        PAGES[CURRENT_PAGE].append(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT])
+        CURRENT_BUTTON_LOCATION += 1
+        CURRENT_TRIGGER_UNIT += 1
+        if CURRENT_BUTTON_LOCATION >= len(BUTTON_LOCATIONS):
+            CURRENT_BUTTON_LOCATION = 0
+            PAGES.append([])
+            CURRENT_PAGE += 1
 
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("EV (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Hero.SABOTEUR
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has activated Exploding Villagers!".format(player, COLOUR[player-1])
-        effect = trigger.add_effect(Effect.ACTIVATE_TRIGGER)
-        effect.trigger_id = trigger_id1
-        effect = trigger.add_effect(Effect.ACTIVATE_TRIGGER)
-        effect.trigger_id = trigger_id2
-        effect = trigger.add_effect(Effect.CHANGE_VARIABLE)
-        effect.from_variable = EV_CD_VAR
-        effect.operation = Operation.ADD
-        effect.quantity = EV_DURATION
+    def kill_all_villagers(trigger_unit: int,
+                           instruction_icon: int,
+                           instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Kill All Villagers p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
 
-    trigger = trigger_manager.add_trigger("EV Display")
-    trigger.looping = 1
-    trigger.short_description = "EV Ends in: <Variable {0}>s".format(EV_CD_VAR)
-    trigger.description = trigger.short_description
-    trigger.display_as_objective = 1
-    trigger.display_on_screen = 1
-    condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-    condition.variable = EV_CD_VAR
-    condition.amount_or_quantity = 0
-    condition.comparison = Comparison.LARGER
-    condition.inverted = 0
-    condition = trigger.add_condition(Condition.TIMER)
-    condition.timer = 1
-    effect = trigger.add_effect(Effect.CHANGE_VARIABLE)
-    effect.from_variable = EV_CD_VAR
-    effect.operation = Operation.SUBTRACT
-    effect.quantity = 1
-def kill_all_castles(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("kill castles (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Building.BARRACKS
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has destroyed all enemy castles!".format(player, COLOUR[player-1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                effect = trigger.add_effect(Effect.KILL_OBJECT)
-                effect.source_player = affectedplayer
-                effect.object_list_unit_id = Building.CASTLE
-def replace_all_military_with_wolves(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("replace mil with wolves (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Hero.ORNLU_THE_WOLF
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has converted all enemy military to wolves!".format(player, COLOUR[player-1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                for building in GARRISONABLE+GARRISONABLE_MILITARY:
-                    effect = trigger.add_effect(Effect.UNLOAD)
-                    effect.object_list_unit_id = building
-                    effect.source_player = affectedplayer
-                    effect.location_x = 1
-                    effect.location_y = 1
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id_2 = Hero.HUNTING_WOLF
-                effect.object_type = 4
-def cycle_archer_line(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("cycle archer line (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Unit.ARCHER
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has cycled the archer line of enemies!".format(player, COLOUR[player-1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                for building in GARRISONABLE + [Building.ARCHERY_RANGE]:
-                    effect = trigger.add_effect(Effect.UNLOAD)
-                    effect.object_list_unit_id = building
-                    effect.source_player = affectedplayer
-                    effect.location_x = 1
-                    effect.location_y = 1
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.ARBALESTER
-                effect.object_list_unit_id_2 = Hero.ARCHBISHOP
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.CROSSBOWMAN
-                effect.object_list_unit_id_2 = Hero.CUMAN_CHIEF
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.ARCHER
-                effect.object_list_unit_id_2 = Unit.ARBALESTER
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Hero.ARCHBISHOP
-                effect.object_list_unit_id_2 = Unit.CROSSBOWMAN
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Hero.CUMAN_CHIEF
-                effect.object_list_unit_id_2 = Unit.ARCHER
-def replace_maa_line(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("replace maa (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Unit.CHAMPION
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has swapped all swords with spears!".format(player,COLOUR[player - 1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                for building in GARRISONABLE + [Building.BARRACKS]:
-                    effect = trigger.add_effect(Effect.UNLOAD)
-                    effect.object_list_unit_id = building
-                    effect.source_player = affectedplayer
-                    effect.location_x = 1
-                    effect.location_y = 1
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.CHAMPION
-                effect.object_list_unit_id_2 = Unit.HALBERDIER
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.TWO_HANDED_SWORDSMAN
-                effect.object_list_unit_id_2 = Unit.HALBERDIER
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.LONG_SWORDSMAN
-                effect.object_list_unit_id_2 = Unit.PIKEMAN
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.MAN_AT_ARMS
-                effect.object_list_unit_id_2 = Unit.SPEARMAN
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.MILITIA
-                effect.object_list_unit_id_2 = Unit.SPEARMAN
-def replace_archer_line(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("replace archer (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Unit.IMPERIAL_SKIRMISHER
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has swapped all bows with javlins!".format(player,COLOUR[player - 1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                for building in GARRISONABLE + [Building.ARCHERY_RANGE]:
-                    effect = trigger.add_effect(Effect.UNLOAD)
-                    effect.object_list_unit_id = building
-                    effect.source_player = affectedplayer
-                    effect.location_x = 1
-                    effect.location_y = 1
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.ARBALESTER
-                effect.object_list_unit_id_2 = Unit.IMPERIAL_SKIRMISHER
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.CROSSBOWMAN
-                effect.object_list_unit_id_2 = Unit.ELITE_SKIRMISHER
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.ARCHER
-                effect.object_list_unit_id_2 = Unit.SKIRMISHER
-def replace_siege_petard_treb(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("replace  (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Unit.CHAMPION
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has swapped all siege with petards and petards with trebs!".format(player,COLOUR[player - 1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                for building in GARRISONABLE + [Building.SIEGE_WORKSHOP]:
-                    effect = trigger.add_effect(Effect.UNLOAD)
-                    effect.object_list_unit_id = building
-                    effect.source_player = affectedplayer
-                    effect.location_x = 1
-                    effect.location_y = 1
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id = Unit.PETARD
-                effect.object_list_unit_id_2 = Hero.BELISARIUS
-                for siege_unit in SIEGE_UNITS:
-                    effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                    effect.source_player = affectedplayer
-                    effect.target_player = affectedplayer
-                    effect.object_list_unit_id = siege_unit
-                    effect.object_list_unit_id_2 = Unit.PETARD
-                effect = trigger.add_effect(Effect.REPLACE_OBJECT)
-                effect.source_player = affectedplayer
-                effect.target_player = affectedplayer
-                effect.object_list_unit_id_2 = Unit.TREBUCHET_PACKED
-                effect.object_list_unit_id = Hero.BELISARIUS
-def stop_enemy_villagers(trigger_unit):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("stop vils (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Unit.VILLAGER_MALE
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has petrified all enemy villagers!".format(player,COLOUR[player - 1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                for villager in VILLAGER:
-                    effect = trigger.add_effect(Effect.STOP_OBJECT)
-                    effect.object_list_unit_id = villager
-                    effect.source_player = affectedplayer
-def labour_strike(trigger_unit):
-    trigger_id_list = []
-    active_id_list = []
-    for player in range(1, NUMBER_OF_PLAYERS+1):
-        trigger = trigger_manager.add_trigger(f"cd p({player})")
-        trigger.short_description = f"P{player}'s Strike ends in <Variable {STRIKE_CD_VAR[player-1]}>s"
-        trigger.description = f"P{player}'s Strike ends in <Variable {STRIKE_CD_VAR[player-1]}>s"
-        trigger.display_as_objective = 1
-        trigger.display_on_screen = 1
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-        condition.amount_or_quantity = 0
-        condition.variable = STRIKE_CD_VAR[player-1]
-        condition.comparison = Comparison.LARGER
-        condition = trigger.add_condition(Condition.TIMER)
-        condition.timer = 1
-        effect = trigger.add_effect(Effect.CHANGE_VARIABLE)
-        effect.from_variable = STRIKE_CD_VAR[player-1]
-        effect.operation = Operation.SUBTRACT
-        effect.quantity = 1
+            for targer_player in range(1, NUMBER_OF_PLAYERS+1):
+                for garrisonable in GARRISONABLE_BY_ALL+[BuildingInfo.MARKET.ID]:
+                    trigger.new_effect.unload(
+                                          object_list_unit_id=garrisonable,
+                                          source_player=targer_player,
+                                          location_x=0,
+                                          location_y=0
+                                       )
+                trigger.new_effect.kill_object(
+                                      source_player=targer_player,
+                                      object_type=3
+                                   )
+        update_location_unit()
 
-        trigger = trigger_manager.add_trigger(f"stop vils p({player})")
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-        condition.amount_or_quantity = 0
-        condition.variable = STRIKE_CD_VAR[player-1]
-        condition.comparison = Comparison.LARGER
-        for villager in VILLAGER:
-            effect = trigger.add_effect(Effect.STOP_OBJECT)
-            effect.source_player = player
-            effect.object_list_unit_id = villager
-            effect = trigger.add_effect(Effect.DISABLE_OBJECT_SELECTION)
-            effect.object_list_unit_id = villager
-            effect.source_player = player
+    def kill_all_military(trigger_unit: int,
+                          instruction_icon: int,
+                          instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Kill All Military p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            for targer_player in range(1, NUMBER_OF_PLAYERS+1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL+GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                                              object_list_unit_id=garrisonable,
+                                              source_player=targer_player,
+                                              location_x=0,
+                                              location_y=0
+                                           )
+                    trigger.new_effect.kill_object(
+                                          source_player=targer_player,
+                                          object_type=4
+                                       )
+        update_location_unit()
 
-        trigger = trigger_manager.add_trigger(f"Make Villagers selectable p({player})")
-        trigger.enabled = 0
-        condition = trigger.add_condition(Condition.VARIABLE_VALUE)
-        condition.amount_or_quantity = 0
-        condition.variable = STRIKE_CD_VAR[player - 1]
-        condition.comparison = Comparison.EQUAL
-        for vil in VILLAGER:
-            effect = trigger.add_effect(Effect.ENABLE_OBJECT_SELECTION)
-            effect.object_list_unit_id = vil
-            effect.source_player = player
-        active_id_list.append(trigger.trigger_id)
+    def cease_fire(trigger_unit: int,
+                   instruction_icon: int,
+                   instruction_text: str):
+        trigger = trigger_manager.add_trigger("Display Information")
+        trigger.short_description = f"Cease Fire Ends In: <Variable {CEASE_FIRE_CD_VAR}>"
+        trigger.display_on_screen = True
+        trigger.new_condition.player_defeated(
+                              source_player=PlayerId.GAIA
+                           )
 
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger("strike (p{0})".format(player))
-        trigger.looping = 1
-        condition = trigger.add_condition(Condition.OWN_OBJECTS)
-        condition.amount_or_quantity = 1
-        condition.object_list = trigger_unit
-        condition.source_player = player
-        effect = trigger.add_effect(Effect.REMOVE_OBJECT)
-        effect.source_player = player
-        effect.object_list_unit_id = trigger_unit
-        effect = trigger.add_effect(Effect.DISPLAY_INSTRUCTIONS)
-        effect.object_list_unit_id = Unit.VILLAGER_MALE
-        effect.source_player = player
-        effect.display_time = 10
-        effect.instruction_panel_position = PanelLocation.TOP
-        effect.message = "<{1}>P{0} has caused a labour strike among the enemy villages!".format(player,COLOUR[player - 1])
-        for affectedplayer in range(1, NUMBER_OF_PLAYERS + 1):
-            if affectedplayer != player:
-                effect = trigger.add_effect(Effect.CHANGE_VARIABLE)
-                effect.from_variable = STRIKE_CD_VAR[affectedplayer - 1]
-                effect.operation = Operation.ADD
-                effect.quantity = STRIKE_DURATION
-                effect = trigger.add_effect(Effect.ACTIVATE_TRIGGER)
-                effect.trigger_id = active_id_list[affectedplayer-1]
-def pages_setu(trigger_unit, pages):
-    for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger_ids = []
-        for i in range(0, len(pages)):
-            trigger2 = trigger_manager.add_trigger(f"page {i+1} p({player})")
-            trigger2.looping = 1
-            condition = trigger2.add_condition(Condition.OWN_OBJECTS)
-            condition.amount_or_quantity = 1
-            condition.object_list = trigger_unit
-            condition.source_player = player
-            effect = trigger2.add_effect(Effect.REMOVE_OBJECT)
-            effect.source_player = player
-            effect.object_list_unit_id = trigger_unit
-            trigger_ids.append(trigger2.trigger_id)
-            condition = trigger2.add_condition(Condition.VARIABLE_VALUE)
-            condition.amount_or_quantity = i
-            condition.variable = PAGE_VAR[player-1]
-            condition.comparison = Comparison.EQUAL
-            effect = trigger2.add_effect(Effect.CHANGE_VARIABLE)
-            effect.quantity = 1
-            effect.operation = Operation.ADD
-            effect.from_variable = PAGE_VAR[player-1]
-            for unit in pages[i]:
-                effect = trigger2.add_effect(Effect.ENABLE_DISABLE_OBJECT)
-                effect.enabled_or_victory = 0
-                effect.source_player = player
-                effect.object_list_unit_id = unit
-                effect.item_id = unit
-            for unit in pages[i+1 if i < len(pages)-1 else 0]:
-                effect = trigger2.add_effect(Effect.ENABLE_DISABLE_OBJECT)
-                effect.enabled_or_victory = 1
-                effect.source_player = player
-                effect.object_list_unit_id = unit
-                effect.item_id = unit
+        trigger = trigger_manager.add_trigger(f"Cease Fire cd")
+        trigger.looping = True
+        trigger.new_condition.variable_value(
+            quantity=0,
+            variable=CEASE_FIRE_CD_VAR,
+            comparison=Comparison.LARGER
+        )
+        trigger.new_effect.change_variable(
+            quantity=1,
+            operation=Operation.SUBTRACT,
+            variable=CEASE_FIRE_CD_VAR
+        )
 
-        trigger2 = trigger_manager.add_trigger(f"reset var p({player})")
-        condition = trigger2.add_condition(Condition.VARIABLE_VALUE)
-        condition.amount_or_quantity = len(pages)
-        condition.variable = PAGE_VAR[player - 1]
-        condition.comparison = Comparison.LARGER_OR_EQUAL
-        effect = trigger2.add_effect(Effect.CHANGE_VARIABLE)
-        effect.quantity = 0
-        effect.operation = Operation.SET
-        effect.from_variable = PAGE_VAR[player - 1]
+        trigger = trigger_manager.add_trigger(f"End Cease Fire")
+        trigger.enabled = False
+        trigger.new_condition.variable_value(
+            quantity=0,
+            variable=CEASE_FIRE_CD_VAR,
+            comparison=Comparison.EQUAL
+        )
+        trigger.new_effect.display_instructions(
+            object_list_unit_id=instruction_icon,
+            source_player=PlayerId.GAIA,
+            display_time=10,
+            message=f"Cease Fire Has Ended!"
+        )
+        for source_player in range(1, NUMBER_OF_PLAYERS + 1):
+            for target_player in range(1, NUMBER_OF_PLAYERS + 1):
+                if source_player != target_player:
+                    trigger.new_effect.change_diplomacy(
+                        diplomacy=DiplomacyState.ENEMY,
+                        source_player=source_player,
+                        target_player=target_player
+                    )
+        activation_id = trigger.trigger_id
 
-add_credits_header("1.2.1", trigger_manager)
+        reactivate_effect_trigger_ids = []
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Re-Enable p({player})")
+            trigger.enabled = False
+            trigger.new_condition.variable_value(
+                                  quantity=0,
+                                  variable=CEASE_FIRE_PLAYER_CD_VAR[player-1],
+                                  comparison=Comparison.EQUAL
+                               )
+            trigger.new_effect.enable_disable_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  enabled=True,
+                                  item_id=trigger_unit
+                               )
+            trigger.new_effect.activate_trigger(
+                                  trigger_id=trigger.trigger_id+2*NUMBER_OF_PLAYERS
+                               )
+            reactivate_effect_trigger_ids.append(trigger.trigger_id)
 
-setup()
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Player cd p({player})")
+            trigger.looping = True
+            trigger.new_condition.variable_value(
+                                  quantity=0,
+                                  variable=CEASE_FIRE_PLAYER_CD_VAR[player-1],
+                                  comparison=Comparison.LARGER
+                               )
+            trigger.new_effect.change_variable(
+                                  quantity=1,
+                                  operation=Operation.SUBTRACT,
+                                  variable=CEASE_FIRE_PLAYER_CD_VAR[player-1]
+                               )
 
-PAGE_ONE = []
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Cease Fire p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=PlayerId.GAIA,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            trigger.new_effect.deactivate_trigger(
+                                  trigger_id=trigger.trigger_id
+                               )
+            trigger.new_effect.activate_trigger(
+                                  trigger_id=activation_id
+                               )
+            trigger.new_effect.activate_trigger(
+                                  trigger_id=reactivate_effect_trigger_ids[player-1]
+                               )
+            trigger.new_effect.change_variable(
+                                  quantity=300,
+                                  operation=Operation.SET,
+                                  variable=CEASE_FIRE_PLAYER_CD_VAR[player-1]
+                               )
+            trigger.new_effect.enable_disable_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  enabled=False,
+                                  item_id=trigger_unit
+                               )
+            trigger.new_effect.change_variable(
+                                  quantity=60,
+                                  operation=Operation.ADD,
+                                  variable=CEASE_FIRE_CD_VAR
+                               )
+            for source_player in range(1, NUMBER_OF_PLAYERS+1):
+                for target_player in range(1, NUMBER_OF_PLAYERS+1):
+                    if source_player != target_player:
+                        trigger.new_effect.change_diplomacy(
+                                              diplomacy=DiplomacyState.ALLY,
+                                              source_player=source_player,
+                                              target_player=target_player
 
-perk_setup(name="Kill All Villagers",
-            cost=KILL_ALL_VILLAGERS_COST,
-            trigger_unit=Hero.ORNLU_THE_WOLF,
-            icon_unit=UnitIcon.VILLAGER_MALE,
-            train_button=ButtonLocation.LOCATION_0_0,
-            description="Black Death I (<Cost>)\nKill ALL villagers",
-            enabled=True)
-kill_all_villagers(trigger_unit=Hero.ORNLU_THE_WOLF)
-PAGE_ONE.append(Hero.ORNLU_THE_WOLF)
+                                           )
 
-perk_setup(name="Kill All Military",
-            cost=KILL_ALL_MILITARY_COST,
-            trigger_unit=Hero.ABRAHA_ELEPHANT,
-            icon_unit=UnitIcon.CHAMPION,
-            train_button=ButtonLocation.LOCATION_1_0,
-            description="Black Death II (<Cost>)\nKill all enemy military",
-            enabled=True)
-kill_all_military(trigger_unit=Hero.ABRAHA_ELEPHANT)
-PAGE_ONE.append(Hero.ABRAHA_ELEPHANT)
+        for player in range(1, NUMBER_OF_PLAYERS + 1):
+            trigger = trigger_manager.add_trigger(f"Remove Unit p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                quantity=1,
+                object_list=trigger_unit,
+                source_player=player
+            )
+            trigger.new_effect.remove_object(
+                object_list_unit_id=trigger_unit,
+                source_player=player,
+            )
+        update_location_unit()
 
-perk_setup(name="Cease Fire",
-            cost=CEASE_FIRE_COST,
-            trigger_unit=Hero.FRIAR_TUCK,
-            icon_unit=UnitIcon.MONK,
-            train_button=ButtonLocation.LOCATION_2_0,
-            description="Cease Fire (<Cost>)\nCease Fire for 60s (cd:300s)",
-            enabled=True)
-cease_fire(trigger_unit=Hero.FRIAR_TUCK)
-PAGE_ONE.append(Hero.FRIAR_TUCK)
+    def exploding_villagers(trigger_unit: int,
+                            instruction_icon: int,
+                            instruction_text: str):
+        trigger = trigger_manager.add_trigger("Display Information")
+        trigger.short_description = f"Exploding Villagers: <Variable {EV_CD_VAR}>"
+        trigger.display_on_screen = True
+        trigger.new_condition.player_defeated(
+                              source_player=PlayerId.GAIA
+                           )
 
-perk_setup(name="Exploding Villagers",
-            cost=EV_COST,
-            trigger_unit=Hero.EMPEROR_IN_A_BARREL,
-            icon_unit=UnitIcon.PETARD,
-            train_button=ButtonLocation.LOCATION_3_0,
-            description="Kamikaze (<Cost>)\nTransform all villagers into Exploding Villagers for 60s",
-            enabled=True)
-exploding_villagers(trigger_unit=Hero.EMPEROR_IN_A_BARREL)
-PAGE_ONE.append(Hero.EMPEROR_IN_A_BARREL)
+        trigger = trigger_manager.add_trigger(f"Exploding Villagers Cooldown")
+        trigger.looping = True
+        trigger.new_condition.variable_value(
+            quantity=0,
+            variable=EV_CD_VAR,
+            comparison=Comparison.LARGER
+        )
+        trigger.new_effect.change_variable(
+            quantity=1,
+            operation=Operation.SUBTRACT,
+            variable=EV_CD_VAR
+        )
 
-perk_setup(name="Kill All Castles",
-            cost=KILL_ALL_CASTLES_COST,
-            trigger_unit=Hero.BAD_NEIGHBOR,
-            icon_unit=HeroIcon.BAD_NEIGHBOR,
-            train_button=ButtonLocation.LOCATION_0_1,
-            description="Earthquake (<Cost>)\nDestroy all enemy castles",
-            enabled=True)
-kill_all_castles(trigger_unit=Hero.BAD_NEIGHBOR)
-PAGE_ONE.append(Hero.BAD_NEIGHBOR)
+        trigger = trigger_manager.add_trigger(f"End Exploding Villagers")
+        trigger.enabled = False
+        trigger.new_condition.variable_value(
+            quantity=0,
+            variable=EV_CD_VAR,
+            comparison=Comparison.EQUAL
+        )
+        trigger.new_effect.display_instructions(
+            object_list_unit_id=instruction_icon,
+            source_player=PlayerId.GAIA,
+            display_time=10,
+            message=f"Exploding Villagers Has Ended!"
+        )
 
-perk_setup(name="Replace Mil with Wolf",
-            cost=REPLACE_MILITARY_WOLF_COST,
-            trigger_unit=Hero.BUI_BI,
-            icon_unit=GaiaUnitIcon.WOLF,
-            train_button=ButtonLocation.LOCATION_1_1,
-            description="Full Moon (<Cost>)\nConvert all enemy military to wolves",
-            enabled=True)
-replace_all_military_with_wolves(trigger_unit=Hero.BUI_BI)
-PAGE_ONE.append(Hero.BUI_BI)
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            for villager in [villager for villager in UnitInfo if "VILLAGER" in villager.name]:
+                trigger.new_effect.modify_attribute(
+                                      quantity=villager.DEAD_ID,
+                                      object_list_unit_id=villager.ID,
+                                      source_player=player,
+                                      item_id=villager.ID,
+                                      operation=Operation.SET,
+                                      object_attributes=ObjectAttribute.DEAD_UNIT_ID
+                                   )
 
-perk_setup(name="Cycle Archer Line",
-            cost=CYCLE_ARCHER_COST,
-            trigger_unit=Hero.ARCHER_OF_THE_EYES,
-            icon_unit=UnitIcon.ARCHER,
-            train_button=ButtonLocation.LOCATION_2_1,
-            description="Ol' Betsy (<Cost>)\nConverts all enemy Arbalesters to Crossbowmen, Crossbowmen to Archers and Archers to Arbalesters",
-            enabled=True)
-cycle_archer_line(trigger_unit=Hero.ARCHER_OF_THE_EYES)
-PAGE_ONE.append(Hero.ARCHER_OF_THE_EYES)
+        activation_id = trigger.trigger_id
 
-perk_setup(name="Replace MAA with Spearmen",
-            cost=REPLACE_MAA_SPEAR_COST,
-            trigger_unit=Hero.FRANKISH_PALADIN,
-            icon_unit=UnitIcon.SPEARMAN,
-            train_button=ButtonLocation.LOCATION_3_1,
-            description="Pointi Bois (<Cost>)\nConvert all enemy Militia Line units to the corresponding age's Spearman line unit",
-            enabled=True)
-replace_maa_line(trigger_unit=Hero.FRANKISH_PALADIN)
-PAGE_ONE.append(Hero.FRANKISH_PALADIN)
+        trigger = trigger_manager.add_trigger("Set Saboteur Attributes")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.modify_attribute(
+                                  quantity=-2,
+                                  object_list_unit_id=HeroInfo.SABOTEUR.ID,
+                                  source_player=player,
+                                  item_id=HeroInfo.SABOTEUR.ID,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.HIT_POINTS
+                               )
+            trigger.new_effect.modify_attribute(
+                                  quantity=1,
+                                  object_list_unit_id=HeroInfo.SABOTEUR.ID,
+                                  source_player=player,
+                                  item_id=HeroInfo.SABOTEUR.ID,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.BLAST_LEVEL
+                               )
+            trigger.new_effect.modify_attribute(
+                                  quantity=2,
+                                  object_list_unit_id=HeroInfo.SABOTEUR.ID,
+                                  source_player=player,
+                                  item_id=HeroInfo.SABOTEUR.ID,
+                                  operation=Operation.SET,
+                                  object_attributes=ObjectAttribute.MAX_RANGE
+                               )
 
-perk_setup(name="Replace Archers with Skirmishers",
-            cost=REPLACE_ARCHER_SKIRM_COST,
-            trigger_unit=Hero.AETHELFRITH,
-            icon_unit=UnitIcon.SKIRMISHER,
-            train_button=ButtonLocation.LOCATION_4_1,
-            description="Javlin Bois (<Cost>)\nConvert all Archer line units to the corresponding age's Skirm line unit",
-            enabled=True)
-replace_archer_line(trigger_unit=Hero.AETHELFRITH)
-PAGE_ONE.append(Hero.AETHELFRITH)
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Exploding Villagers p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            trigger.new_effect.activate_trigger(
+                                  trigger_id=activation_id
+                               )
+            trigger.new_effect.change_variable(
+                                  quantity=60,
+                                  operation=Operation.ADD,
+                                  variable=EV_CD_VAR
+                               )
 
-perk_setup(name="Replace Siege with Petards with Trebs",
-            cost=REPLACE_SIEGE_PETARD_TREB_COST,
-            trigger_unit=Hero.BAD_NEIGHBOR_PACKED,
-            icon_unit=UnitIcon.SIEGE_TOWER,
-            train_button=ButtonLocation.LOCATION_0_2,
-            description="Siege Swap (<Cost>)\nConvert all enemy siege to Petards and enemy Petards to Trebuchets",
-            enabled=True)
-replace_siege_petard_treb(trigger_unit=Hero.BAD_NEIGHBOR_PACKED)
-PAGE_ONE.append(Hero.BAD_NEIGHBOR_PACKED)
+            for player in range(1, NUMBER_OF_PLAYERS + 1):
+                for villager in [villager for villager in UnitInfo if "VILLAGER" in villager.name]:
+                    trigger.new_effect.modify_attribute(
+                        quantity=HeroInfo.SABOTEUR.ID,
+                        object_list_unit_id=villager.ID,
+                        source_player=player,
+                        item_id=villager.ID,
+                        operation=Operation.SET,
+                        object_attributes=ObjectAttribute.DEAD_UNIT_ID
+                    )
+        update_location_unit()
 
-perk_setup(name="Idle Vils",
-            cost=STOP_ENEMY_VILLAGERS_COST,
-            trigger_unit=Hero.JEAN_BUREAU,
-            icon_unit=UnitIcon.VILLAGER_FEMALE,
-            train_button=ButtonLocation.LOCATION_1_2,
-            description="Petrification (<Cost>)\nStop (idle) all enemy villagers",
-            enabled=True)
-stop_enemy_villagers(trigger_unit=Hero.JEAN_BUREAU)
-PAGE_ONE.append(Hero.JEAN_BUREAU)
+    def kill_all_castles(trigger_unit: int,
+                          instruction_icon: int,
+                          instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Kill All Castles p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            for targer_player in range(1, NUMBER_OF_PLAYERS+1):
+                if player != targer_player:
+                    trigger.new_effect.kill_object(
+                                          object_list_unit_id=BuildingInfo.CASTLE.ID,
+                                          source_player=targer_player
+                                       )
+        update_location_unit()
 
-perk_setup(name="Labour Strike",
-            cost=LABOUR_STRIKE_COST,
-            trigger_unit=Hero.CHAND_BARDAI,
-            icon_unit=UnitIcon.FLEMISH_MILITIA,
-            train_button=ButtonLocation.LOCATION_2_2,
-            description="Labour Strike (<Cost>)\nEnemy villagers refuse to work for 30s",
-            enabled=True)
-labour_strike(trigger_unit=Hero.CHAND_BARDAI)
-PAGE_ONE.append(Hero.CHAND_BARDAI)
+    def military_to_t90woo(trigger_unit: int,
+                          instruction_icon: int,
+                          instruction_text: str):
 
-PAGE_TWO = []
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"t90Woo p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            for targer_player in range(1, NUMBER_OF_PLAYERS+1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL+GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                                              object_list_unit_id=garrisonable,
+                                              source_player=targer_player,
+                                              location_x=0,
+                                              location_y=0
+                                           )
+                    trigger.new_effect.replace_object(
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_type=4,
+                                          object_list_unit_id_2=HeroInfo.HUNTING_WOLF.ID
+                                       )
+        update_location_unit()
 
-perk_setup(name="Next Page",
-            cost=[0, 0, 0, 0],
-            trigger_unit=Unit.MOVEABLE_MAP_REVEALER,
-            icon_unit=UnitIcon.MOVEABLE_MAP_REVEALER,
-            train_button=ButtonLocation.LOCATION_3_2,
-            description="Next Page\nFlip to the next page of perks",
-            enabled=False)
-pages_setu(trigger_unit=Unit.MOVEABLE_MAP_REVEALER, pages=(PAGE_ONE, PAGE_TWO))
-scenario.write_to_file(output_path+outname)
+    def cycle_archer_line(trigger_unit: int,
+                          instruction_icon: int,
+                          instruction_text: str):
+
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Cycle Archer Line p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            for targer_player in range(1, NUMBER_OF_PLAYERS+1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL+GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                                              object_list_unit_id=garrisonable,
+                                              source_player=targer_player,
+                                              location_x=0,
+                                              location_y=0
+                                           )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=UnitInfo.ARBALESTER.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=HeroInfo.ZAWISZA_THE_BLACK.ID
+                                       )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=UnitInfo.CROSSBOWMAN.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=HeroInfo.YODIT.ID
+                                       )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=UnitInfo.ARCHER.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=UnitInfo.ARBALESTER.ID
+                                       )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=HeroInfo.YODIT.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=UnitInfo.ARCHER.ID
+                                       )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=HeroInfo.ZAWISZA_THE_BLACK.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=UnitInfo.CROSSBOWMAN.ID
+                                       )
+        update_location_unit()
+
+    def replace_maa_spear(trigger_unit: int,
+                          instruction_icon: int,
+                          instruction_text: str):
+
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Replace Militia With Spears p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            for targer_player in range(1, NUMBER_OF_PLAYERS+1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL+GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                                              object_list_unit_id=garrisonable,
+                                              source_player=targer_player,
+                                              location_x=0,
+                                              location_y=0
+                                           )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=UnitInfo.MILITIA.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=UnitInfo.SPEARMAN.ID
+                                       )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=UnitInfo.MAN_AT_ARMS.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=UnitInfo.SPEARMAN.ID
+                                       )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=UnitInfo.LONG_SWORDSMAN.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=UnitInfo.PIKEMAN.ID
+                                       )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=UnitInfo.TWO_HANDED_SWORDSMAN.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=UnitInfo.HALBERDIER.ID
+                                       )
+                    trigger.new_effect.replace_object(
+                                          object_list_unit_id=UnitInfo.CHAMPION.ID,
+                                          source_player=targer_player,
+                                          target_player=targer_player,
+                                          object_list_unit_id_2=UnitInfo.HALBERDIER.ID
+                                       )
+        update_location_unit()
+
+    def replace_archer_skirms(trigger_unit: int,
+                              instruction_icon: int,
+                              instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS + 1):
+            trigger = trigger_manager.add_trigger(f"Replace Archers With Skirms p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                quantity=1,
+                object_list=trigger_unit,
+                source_player=player
+            )
+            trigger.new_effect.remove_object(
+                object_list_unit_id=trigger_unit,
+                source_player=player,
+            )
+            trigger.new_effect.display_instructions(
+                object_list_unit_id=instruction_icon,
+                source_player=player,
+                display_time=10,
+                message=f"<{COLOUR[player - 1]}>Player {player} Has " + instruction_text
+            )
+            for targer_player in range(1, NUMBER_OF_PLAYERS + 1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL + GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                            object_list_unit_id=garrisonable,
+                            source_player=targer_player,
+                            location_x=0,
+                            location_y=0
+                        )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.ARCHER.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.SKIRMISHER.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.CROSSBOWMAN.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.ELITE_SKIRMISHER.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.ARBALESTER.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.IMPERIAL_SKIRMISHER.ID
+                    )
+        update_location_unit()
+
+    def replace_kt_lc(trigger_unit: int,
+                      instruction_icon: int,
+                      instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS + 1):
+            trigger = trigger_manager.add_trigger(f"Replace Kt With Scouts p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                quantity=1,
+                object_list=trigger_unit,
+                source_player=player
+            )
+            trigger.new_effect.remove_object(
+                object_list_unit_id=trigger_unit,
+                source_player=player,
+            )
+            trigger.new_effect.display_instructions(
+                object_list_unit_id=instruction_icon,
+                source_player=player,
+                display_time=10,
+                message=f"<{COLOUR[player - 1]}>Player {player} Has " + instruction_text
+            )
+            for targer_player in range(1, NUMBER_OF_PLAYERS + 1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL + GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                            object_list_unit_id=garrisonable,
+                            source_player=targer_player,
+                            location_x=0,
+                            location_y=0
+                        )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.KNIGHT.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.LIGHT_CAVALRY.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.CAVALIER.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.HUSSAR.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.PALADIN.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.HUSSAR.ID
+                    )
+        update_location_unit()
+
+    def replace_camel_lc(trigger_unit: int,
+                         instruction_icon: int,
+                         instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS + 1):
+            trigger = trigger_manager.add_trigger(f"Replace Camel With Scouts p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                quantity=1,
+                object_list=trigger_unit,
+                source_player=player
+            )
+            trigger.new_effect.remove_object(
+                object_list_unit_id=trigger_unit,
+                source_player=player,
+            )
+            trigger.new_effect.display_instructions(
+                object_list_unit_id=instruction_icon,
+                source_player=player,
+                display_time=10,
+                message=f"<{COLOUR[player - 1]}>Player {player} Has " + instruction_text
+            )
+            for targer_player in range(1, NUMBER_OF_PLAYERS + 1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL + GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                            object_list_unit_id=garrisonable,
+                            source_player=targer_player,
+                            location_x=0,
+                            location_y=0
+                        )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.CAMEL_RIDER.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.LIGHT_CAVALRY.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.HEAVY_CAMEL_RIDER.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.HUSSAR.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.IMPERIAL_CAMEL_RIDER.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.HUSSAR.ID
+                    )
+        update_location_unit()
+
+    def replace_ele_lc(trigger_unit: int,
+                       instruction_icon: int,
+                       instruction_text: str):
+
+        for player in range(1, NUMBER_OF_PLAYERS + 1):
+            trigger = trigger_manager.add_trigger(f"Replace Ele With Scouts p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                quantity=1,
+                object_list=trigger_unit,
+                source_player=player
+            )
+            trigger.new_effect.remove_object(
+                object_list_unit_id=trigger_unit,
+                source_player=player,
+            )
+            trigger.new_effect.display_instructions(
+                object_list_unit_id=instruction_icon,
+                source_player=player,
+                display_time=10,
+                message=f"<{COLOUR[player - 1]}>Player {player} Has " + instruction_text
+            )
+            for targer_player in range(1, NUMBER_OF_PLAYERS + 1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL + GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                            object_list_unit_id=garrisonable,
+                            source_player=targer_player,
+                            location_x=0,
+                            location_y=0
+                        )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.BATTLE_ELEPHANT.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.LIGHT_CAVALRY.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.ELITE_BATTLE_ELEPHANT.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.HUSSAR.ID
+                    )
+        update_location_unit()
+
+    def replace_sl_lc(trigger_unit: int,
+                      instruction_icon: int,
+                      instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS + 1):
+            trigger = trigger_manager.add_trigger(f"Replace Sl With Scouts p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                quantity=1,
+                object_list=trigger_unit,
+                source_player=player
+            )
+            trigger.new_effect.remove_object(
+                object_list_unit_id=trigger_unit,
+                source_player=player,
+            )
+            trigger.new_effect.display_instructions(
+                object_list_unit_id=instruction_icon,
+                source_player=player,
+                display_time=10,
+                message=f"<{COLOUR[player - 1]}>Player {player} Has " + instruction_text
+            )
+            for targer_player in range(1, NUMBER_OF_PLAYERS + 1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL + GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                            object_list_unit_id=garrisonable,
+                            source_player=targer_player,
+                            location_x=0,
+                            location_y=0
+                        )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.STEPPE_LANCER.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.LIGHT_CAVALRY.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.ELITE_STEPPE_LANCER.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.HUSSAR.ID
+                    )
+        update_location_unit()
+
+    def replace_siege_petards_petards_trebs(trigger_unit: int,
+                                            instruction_icon: int,
+                                            instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS + 1):
+            trigger = trigger_manager.add_trigger(f"Siege Swap p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                quantity=1,
+                object_list=trigger_unit,
+                source_player=player
+            )
+            trigger.new_effect.remove_object(
+                object_list_unit_id=trigger_unit,
+                source_player=player,
+            )
+            trigger.new_effect.display_instructions(
+                object_list_unit_id=instruction_icon,
+                source_player=player,
+                display_time=10,
+                message=f"<{COLOUR[player - 1]}>Player {player} Has " + instruction_text
+            )
+            for targer_player in range(1, NUMBER_OF_PLAYERS + 1):
+                if player != targer_player:
+                    for garrisonable in GARRISONABLE_BY_ALL + GARRISONABLE_BY_MILITARY:
+                        trigger.new_effect.unload(
+                            object_list_unit_id=garrisonable,
+                            source_player=targer_player,
+                            location_x=0,
+                            location_y=0
+                        )
+                    for siege in SIEGE_UNITS:
+                        trigger.new_effect.replace_object(
+                            object_list_unit_id=siege,
+                            source_player=targer_player,
+                            target_player=targer_player,
+                            object_list_unit_id_2=HeroInfo.YEKUNA_AMLAK.ID
+                        )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=UnitInfo.PETARD.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.TREBUCHET_PACKED.ID
+                    )
+                    trigger.new_effect.replace_object(
+                        object_list_unit_id=HeroInfo.YEKUNA_AMLAK.ID,
+                        source_player=targer_player,
+                        target_player=targer_player,
+                        object_list_unit_id_2=UnitInfo.PETARD.ID
+                    )
+        update_location_unit()
+
+    def idle_eco(trigger_unit: int,
+                 instruction_icon: int,
+                 instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"idle eco p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            for target_player in range(1, NUMBER_OF_PLAYERS+1):
+                if target_player != player:
+                    trigger.new_effect.stop_object(
+                        source_player=target_player,
+                        object_type=3
+                    )
+        update_location_unit()
+
+
+    def labour_strike(trigger_unit: int,
+                      instruction_icon: int,
+                      instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Cooldown p({player})")
+            trigger.looping = True
+            trigger.new_condition.variable_value(
+                                  quantity=0,
+                                  variable=STRIKE_CD_VAR[player-1],
+                                  comparison=Comparison.LARGER
+                               )
+            trigger.new_effect.change_variable(
+                                  quantity=1,
+                                  operation=Operation.SUBTRACT,
+                                  variable=STRIKE_CD_VAR[player-1]
+                               )
+
+        activation_id = []
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Reset selection p({player})")
+            trigger.enabled = False
+            trigger.new_condition.variable_value(
+                                  quantity=0,
+                                  variable=STRIKE_CD_VAR[player-1],
+                                  comparison=Comparison.EQUAL
+                               )
+            for vil in [villager for villager in UnitInfo if "VILLAGER" in villager.name]:
+                trigger.new_effect.enable_object_selection(
+                                      object_list_unit_id=vil.ID,
+                                      source_player=player,
+                                   )
+            activation_id.append(trigger.trigger_id)
+
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger("Display Information")
+            trigger.short_description = f"P{player}'s Strike Ends In: <Variable {STRIKE_CD_VAR[player-1]}>"
+            trigger.display_on_screen = True
+            trigger.new_condition.player_defeated(
+                source_player=PlayerId.GAIA
+            )
+
+            trigger = trigger_manager.add_trigger(f"Strike p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            for target_player in range(1, NUMBER_OF_PLAYERS+1):
+                if target_player != player:
+                    trigger.new_effect.activate_trigger(
+                        trigger_id=activation_id[target_player - 1]
+                    )
+                    trigger.new_effect.change_variable(
+                                          quantity=30,
+                                          operation=Operation.ADD,
+                                          variable=STRIKE_CD_VAR[target_player-1]
+                                       )
+                    for vil in [villager for villager in UnitInfo if "VILLAGER" in villager.name]:
+                        trigger.new_effect.stop_object(
+                                              object_list_unit_id=vil.ID,
+                                              source_player=target_player,
+                                           )
+                        trigger.new_effect.disable_object_selection(
+                                              object_list_unit_id=vil.ID,
+                                              source_player=target_player,
+                                           )
+        update_location_unit()
+
+
+
+
+    def dope(trigger_unit: int,
+             instruction_icon: int,
+             instruction_text: str):
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Dope cd p({player})")
+            trigger.looping = True
+            trigger.new_condition.variable_value(
+                quantity=0,
+                variable=DOPE_CD_VAR[player-1],
+                comparison=Comparison.LARGER
+            )
+            trigger.new_effect.change_variable(
+                quantity=1,
+                operation=Operation.SUBTRACT,
+                variable=DOPE_CD_VAR[player-1]
+            )
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Player cd p({player})")
+            trigger.looping = True
+            trigger.new_condition.variable_value(
+                quantity=0,
+                variable=DOPE_PLAYER_CD_VAR[player-1],
+                comparison=Comparison.LARGER
+            )
+            trigger.new_effect.change_variable(
+                quantity=1,
+                operation=Operation.SUBTRACT,
+                variable=DOPE_PLAYER_CD_VAR[player-1]
+            )
+
+        activation_id = []
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Reset Villager stats p({player})")
+            trigger.enabled = False
+            trigger.new_condition.variable_value(
+                quantity=0,
+                variable=DOPE_CD_VAR[player-1],
+                comparison=Comparison.EQUAL
+            )
+            trigger.new_effect.display_instructions(
+                object_list_unit_id=instruction_icon,
+                source_player=PlayerId.GAIA,
+                display_time=10,
+                message=f"Villager Doping Has Worn Off For Player {player}!"
+            )
+            for vil in [villager for villager in UnitInfo if "VILLAGER" in villager.name]:
+                trigger.new_effect.modify_attribute(
+                                      quantity=2,
+                                      object_list_unit_id=vil.ID,
+                                      source_player=player,
+                                      item_id=vil.ID,
+                                      operation=Operation.DIVIDE,
+                                      object_attributes=ObjectAttribute.WORK_RATE
+                                   )
+                trigger.new_effect.modify_attribute(
+                                      quantity=2,
+                                      object_list_unit_id=vil.ID,
+                                      source_player=player,
+                                      item_id=vil.ID,
+                                      operation=Operation.DIVIDE,
+                                      object_attributes=ObjectAttribute.MOVEMENT_SPEED
+                                   )
+            trigger.new_effect.modify_attribute(
+                quantity=2,
+                object_list_unit_id=UnitInfo.FISHING_SHIP.ID,
+                source_player=player,
+                item_id=UnitInfo.FISHING_SHIP.ID,
+                operation=Operation.DIVIDE,
+                object_attributes=ObjectAttribute.WORK_RATE
+            )
+            trigger.new_effect.modify_attribute(
+                quantity=2,
+                object_list_unit_id=UnitInfo.FISHING_SHIP.ID,
+                source_player=player,
+                item_id=UnitInfo.FISHING_SHIP.ID,
+                operation=Operation.DIVIDE,
+                object_attributes=ObjectAttribute.MOVEMENT_SPEED
+            )
+
+            activation_id.append(trigger.trigger_id)
+
+        reactivate_effect_trigger_ids = []
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Re-Enable p({player})")
+            trigger.enabled = False
+            trigger.new_condition.variable_value(
+                                  quantity=0,
+                                  variable=DOPE_PLAYER_CD_VAR[player-1],
+                                  comparison=Comparison.EQUAL
+                               )
+            trigger.new_effect.enable_disable_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  enabled=True,
+                                  item_id=trigger_unit
+                               )
+            trigger.new_effect.activate_trigger(
+                                  trigger_id=trigger.trigger_id+NUMBER_OF_PLAYERS
+                               )
+            reactivate_effect_trigger_ids.append(trigger.trigger_id)
+
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Doping p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+            trigger.new_effect.display_instructions(
+                                  object_list_unit_id=instruction_icon,
+                                  source_player=player,
+                                  display_time=10,
+                                  message=f"<{COLOUR[player-1]}>Player {player} Has "+instruction_text
+                               )
+            trigger.new_effect.activate_trigger(
+                                  trigger_id=activation_id[player-1]
+                               )
+            trigger.new_effect.activate_trigger(
+                                  trigger_id=reactivate_effect_trigger_ids[player-1]
+                               )
+            trigger.new_effect.deactivate_trigger(
+                                  trigger_id=trigger.trigger_id
+                               )
+            trigger.new_effect.change_variable(
+                                  quantity=60,
+                                  operation=Operation.ADD,
+                                  variable=DOPE_CD_VAR[player-1]
+                               )
+            trigger.new_effect.change_variable(
+                                  quantity=300,
+                                  operation=Operation.ADD,
+                                  variable=DOPE_PLAYER_CD_VAR[player-1]
+                               )
+            trigger.new_effect.enable_disable_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                                  enabled=False,
+                                  item_id=trigger_unit
+                               )
+
+            for vil in [villager for villager in UnitInfo if "VILLAGER" in villager.name]:
+                trigger.new_effect.modify_attribute(
+                                      quantity=2,
+                                      object_list_unit_id=vil.ID,
+                                      source_player=player,
+                                      item_id=vil.ID,
+                                      operation=Operation.MULTIPLY,
+                                      object_attributes=ObjectAttribute.WORK_RATE
+                                   )
+                trigger.new_effect.modify_attribute(
+                                      quantity=2,
+                                      object_list_unit_id=vil.ID,
+                                      source_player=player,
+                                      item_id=vil.ID,
+                                      operation=Operation.MULTIPLY,
+                                      object_attributes=ObjectAttribute.MOVEMENT_SPEED
+                                   )
+            trigger.new_effect.modify_attribute(
+                quantity=2,
+                object_list_unit_id=UnitInfo.FISHING_SHIP.ID,
+                source_player=player,
+                item_id=UnitInfo.FISHING_SHIP.ID,
+                operation=Operation.MULTIPLY,
+                object_attributes=ObjectAttribute.WORK_RATE
+            )
+            trigger.new_effect.modify_attribute(
+                quantity=2,
+                object_list_unit_id=UnitInfo.FISHING_SHIP.ID,
+                source_player=player,
+                item_id=UnitInfo.FISHING_SHIP.ID,
+                operation=Operation.MULTIPLY,
+                object_attributes=ObjectAttribute.MOVEMENT_SPEED
+            )
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger = trigger_manager.add_trigger(f"Remove Unit p({player})")
+            trigger.looping = True
+            trigger.new_condition.own_objects(
+                                  quantity=1,
+                                  object_list=trigger_unit,
+                                  source_player=player
+                               )
+            trigger.new_effect.remove_object(
+                                  object_list_unit_id=trigger_unit,
+                                  source_player=player,
+                               )
+        update_location_unit()
+
+
+
+
+    add_credits_header("2.0.0", trigger_manager)
+
+    setup()
+
+    icon_unit = UnitInfo.VILLAGER_MALE
+    perk_setup("kill all villagers",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               KILL_ALL_VILLAGERS_COST,
+               "Black Death I (<Cost>)\nKill all villagers, trade and fishing ships on the map for EVERY player",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    kill_all_villagers(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                       icon_unit.ID,
+                       "Killed All Villagers!")
+
+    icon_unit = UnitInfo.CHAMPION
+    perk_setup("kill all military",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               KILL_ALL_MILITARY_COST,
+               "Black Death II (<Cost>)\nKill all enemy military",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    kill_all_military(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                      icon_unit.ID,
+                      "Killed All Military!")
+
+    icon_unit = HeroInfo.ARCHBISHOP
+    CD_HEROES.append(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT])
+    CD_VARS.append(CEASE_FIRE_PLAYER_CD_VAR)
+    perk_setup("cease fire",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               CEASE_FIRE_COST,
+               "Cease Fire (<Cost>)\nCall a cease fire among all players for 60s\nCooldown: 300s",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    cease_fire(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               UnitInfo.HAWK.ID,
+               "Called For A Cease Fire!")
+
+    icon_unit = HeroInfo.SABOTEUR
+    perk_setup("exploding villagers",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               EV_COST,
+               "Kamikaze (<Cost>)\nTurn ALL villagers into exploding villagers for 60s",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    exploding_villagers(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                        icon_unit.ID,
+                        "Has Activated Exploding Villagers!")
+
+    PAGES[CURRENT_PAGE].append(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT])
+
+    icon_unit = UnitInfo.SIEGE_RAM
+    perk_setup("kill all castles",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               KILL_ALL_CASTLES_COST,
+               "Earthquake (<Cost>)\nKill all enemy castles",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    kill_all_castles(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                      icon_unit.ID,
+                      "Has Killed All Castles!")
+
+    # FIVE
+
+    icon_unit = HeroInfo.HUNTING_WOLF
+    perk_setup("t90Woo",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_MILITARY_WOLF_COST,
+               "t90Woo (<Cost>)\nReplace all enemy military with wolves",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    military_to_t90woo(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                      icon_unit.ID,
+                      "Has Converted All Military To Wolves!")
+
+    icon_unit = UnitInfo.ARCHER
+    perk_setup("cycle archer line",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               CYCLE_ARCHER_COST,
+               "Ol' Betsy (<Cost>)\nReplace enemy arbalesters with crossbowmen, crossbowmen with "+
+               "archers and archers with arbalesters",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    cycle_archer_line(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                      icon_unit.ID,
+                      "Has Cycled The Archer Line!")
+
+    icon_unit = UnitInfo.HALBERDIER
+    perk_setup("replace militia with spear",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_MAA_SPEAR_COST,
+               "Pointi Bois (<Cost>)\nReplace enemy swordsman line units with corresponding age's spear line units ",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    replace_maa_spear(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                      icon_unit.ID,
+                      "Has Replaced Swordsman Line With Spearman Line!")
+
+    icon_unit = UnitInfo.IMPERIAL_SKIRMISHER
+    perk_setup("replace arhcer with skirmisher",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_MAA_SPEAR_COST,
+               "Javlin Bois (<Cost>)\nReplace enemy archer line units with corresponding age's skirmisher line units ",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    replace_archer_skirms(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                          icon_unit.ID,
+                          "Has Replaced Archer Line With Skirmisher Line!")
+
+    icon_unit = UnitInfo.SIEGE_TOWER
+    perk_setup("replace siege petard trebs",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_SIEGE_PETARD_TREB_COST,
+               "Siege Swap (<Cost>)\nReplace enemy siege units with petards and petards with trebuchets",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    replace_siege_petards_petards_trebs(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                                        icon_unit.ID,
+                                        "Has Replaced Siege With Petards And Petards With Trebuchets!")
+
+    # TEN
+
+    icon_unit = UnitInfo.PHOTONMAN
+    perk_setup("idle eco",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_SIEGE_PETARD_TREB_COST,
+               "Petrification (<Cost>)\nStop (idle) all enemy villagers",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    idle_eco(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                                        icon_unit.ID,
+                                        "Has Petrified Enemy Villagers!")
+
+    icon_unit = UnitInfo.MERCHANT
+    perk_setup("labour strike",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_SIEGE_PETARD_TREB_COST,
+               "Labour Strike (<Cost>)\nEnemy villagers refuse to work for 30s",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    labour_strike(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                                        icon_unit.ID,
+                                        "Has Caused A Labour Strike In The Enemy Nations!")
+
+    icon_unit = UnitInfo.KNIGHT
+    perk_setup("replace kt with sc",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_KT_LC,
+               "Pony Bois I (<Cost>)\nReplace enemy knights line units with the corresponding age's scout line units",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    replace_kt_lc(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                  icon_unit.ID,
+                  "Has Replaced The Knight Line With Scout Line!")
+
+    icon_unit = UnitInfo.CAMEL_RIDER
+    perk_setup("replace camels with sc",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_CAM_LC,
+               "Pony Bois II (<Cost>)\nReplace enemy camel line units with the corresponding age's scout line units",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    replace_camel_lc(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                     icon_unit.ID,
+                     "Has Replaced The Camel Line With Scout Line!")
+
+    icon_unit = UnitInfo.BATTLE_ELEPHANT
+    perk_setup("replace ele with sc",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_ELE_LC,
+               "Pony Bois III (<Cost>)\nReplace enemy battle elephant line units with the corresponding age's scout line units",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    replace_ele_lc(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                   icon_unit.ID,
+                   "Has Replaced The Battle Elephant Line With Scout Line!")
+
+    # FIFTEEN
+
+    icon_unit = UnitInfo.STEPPE_LANCER
+    perk_setup("replace sl with sc",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               REPLACE_SL_LC,
+               "Pony Bois IV (<Cost>)\nReplace enemy steppe lancer line units with the corresponding age's scout line units",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    replace_sl_lc(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+                  icon_unit.ID,
+                  "Has Replaced The Steppe Lancer Line With Scout Line!")
+
+    icon_unit = UnitInfo.ALFRED_THE_ALPACA
+    CD_HEROES.append(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT])
+    CD_VARS.append(DOPE_PLAYER_CD_VAR)
+    perk_setup("dope vils",
+               TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               BUTTON_LOCATIONS[CURRENT_BUTTON_LOCATION],
+               DOPE_COST,
+               "Doping (<Cost>)\nDouble the work rates and movement speeds of your own villagers and fishing ships for 60s"+
+               "\nCooldown: 300s",
+               CURRENT_PAGE == 0,
+               icon_unit.ICON_ID)
+
+    dope(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
+         icon_unit.ID,
+         "Has Doped Their Villagers For 60s!")
+
+    page_unit = HeroInfo.WILLIAM_WALLACE.ID
+    perk_setup("change pages",
+               page_unit,
+               BuildingInfo.TRADE_WORKSHOP.ID,
+               ButtonLocation.r3c4,
+               [0, 0, 0, 0],
+               "Next Page\nFlip over to the next page of perks",
+               True,
+               -2)
+
+    page_setup(page_unit, PAGES)
+
+    scenario.write_to_file(output_path + outname)
