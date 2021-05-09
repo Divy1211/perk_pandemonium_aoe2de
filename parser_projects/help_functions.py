@@ -7,7 +7,7 @@ COLOUR = ["BLUE", "RED", "GREEN", "YELLOW", "AQUA", "PURPLE", "GREY", "ORANGE"]
 
 def correct_scout(NUMBER_OF_PLAYERS, trigger_manager):
     for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger(f"Replace Scout p({int(player)})\x00")
+        trigger = trigger_manager.add_trigger(f"Replace Scout p({int(player)})")
         for civ in MESO_CIV:
             trigger.new_condition.research_technology(source_player=player,
                                                       technology=civ)
@@ -21,7 +21,7 @@ def correct_scout(NUMBER_OF_PLAYERS, trigger_manager):
         )
 
     for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger(f"Replace Scout p({player})\x00")
+        trigger = trigger_manager.add_trigger(f"Replace Scout p({player})")
         for civ in MESO_CIV:
             trigger.new_condition.research_technology(
                 source_player=player,
@@ -38,7 +38,7 @@ def correct_scout(NUMBER_OF_PLAYERS, trigger_manager):
 
 def add_civ_bonuses(NUMBER_OF_PLAYERS, trigger_manager):
     for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger(f"Chinese Bonus (p{player})\x00")
+        trigger = trigger_manager.add_trigger(f"Chinese Bonus (p{player})")
         trigger.new_condition.research_technology(
             source_player=player,
             technology=TechInfo.CHINESE.ID
@@ -57,7 +57,7 @@ def add_civ_bonuses(NUMBER_OF_PLAYERS, trigger_manager):
         )
 
     for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger(f"Lithuanian Bonus (p{player})\x00")
+        trigger = trigger_manager.add_trigger(f"Lithuanian Bonus (p{player})")
         trigger.new_condition.research_technology(
             source_player=player,
             technology=TechInfo.LITHUANIANS.ID
@@ -70,7 +70,7 @@ def add_civ_bonuses(NUMBER_OF_PLAYERS, trigger_manager):
         )
 
     for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger(f"Hun Bonus (p{player})\x00")
+        trigger = trigger_manager.add_trigger(f"Hun Bonus (p{player})")
         trigger.new_condition.research_technology(
             source_player=player,
             technology=TechInfo.HUNS.ID
@@ -83,7 +83,7 @@ def add_civ_bonuses(NUMBER_OF_PLAYERS, trigger_manager):
         )
 
     for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger(f"Mayan Bonus (p{player})\x00")
+        trigger = trigger_manager.add_trigger(f"Mayan Bonus (p{player})")
         trigger.new_condition.research_technology(
             source_player=player,
             technology=TechInfo.MAYANS.ID
@@ -96,7 +96,7 @@ def add_civ_bonuses(NUMBER_OF_PLAYERS, trigger_manager):
         )
 
     for player in range(1, NUMBER_OF_PLAYERS + 1):
-        trigger = trigger_manager.add_trigger(f"Persian Bonus (p{player})\x00")
+        trigger = trigger_manager.add_trigger(f"Persian Bonus (p{player})")
         trigger.new_condition.research_technology(
             source_player=player,
             technology=TechInfo.PERSIANS.ID
@@ -213,16 +213,16 @@ def add_credits_header(map_version, trigger_manager, parser_version="0.1.8"):
     triggers = copy.deepcopy(trigger_manager.triggers)
     trigger_manager.triggers = []
 
-    trigger_manager.add_trigger("\x00")
-    trigger_manager.add_trigger("\x00")
-    trigger_manager.add_trigger("\x00")
-    trigger_manager.add_trigger(f"       Map By Alian713 ({map_version})\x00")
-    trigger_manager.add_trigger(f" Made Using AoE2ScenarioParser v{parser_version}\x00")
-    trigger_manager.add_trigger(" AoE2ScenarioParser by MrKirby:\x00")
-    trigger_manager.add_trigger("https://github.com/KSneijders/AoE2ScenarioParser\x00")
-    trigger_manager.add_trigger("\x00")
-    trigger_manager.add_trigger("\x00")
-    trigger_manager.add_trigger("\x00")
+    trigger_manager.add_trigger("")
+    trigger_manager.add_trigger("")
+    trigger_manager.add_trigger("")
+    trigger_manager.add_trigger(f"       Map By Alian713 ({map_version})")
+    trigger_manager.add_trigger(f" Made Using AoE2ScenarioParser v{parser_version}")
+    trigger_manager.add_trigger(" AoE2ScenarioParser by MrKirby:")
+    trigger_manager.add_trigger("https://github.com/KSneijders/AoE2ScenarioParser")
+    trigger_manager.add_trigger("")
+    trigger_manager.add_trigger("")
+    trigger_manager.add_trigger("")
 
     trigger_manager.triggers.extend(triggers)
 
