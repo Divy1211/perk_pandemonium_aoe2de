@@ -216,6 +216,14 @@ for NUMBER_OF_PLAYERS in range(1, 9):
                                   item_id=BuildingInfo.WONDER.ID
                                )
 
+        trigger = trigger_manager.add_trigger("Disable Spies")
+        for player in range(1, NUMBER_OF_PLAYERS+1):
+            trigger.new_effect.enable_disable_technology(
+                                  source_player=player,
+                                  technology=TechInfo.SPIES_AND_TREASON.ID,
+                                  enabled=False
+                               )
+
         trigger = trigger_manager.add_trigger("TW Enable Trade Workshop")
         for player in range(1, NUMBER_OF_PLAYERS+1):
             trigger.new_effect.enable_disable_object(
@@ -1521,7 +1529,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
 
 
-    add_credits_header("2.0.0", trigger_manager)
+    add_credits_header("2.0.1", trigger_manager)
 
     setup()
 
@@ -1581,7 +1589,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     exploding_villagers(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                         icon_unit.ID,
-                        "Has Activated Exploding Villagers!")
+                        "Activated Exploding Villagers!")
 
     PAGES[CURRENT_PAGE].append(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT])
 
@@ -1597,7 +1605,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     kill_all_castles(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                       icon_unit.ID,
-                      "Has Killed All Castles!")
+                      "Killed All Castles!")
 
     # FIVE
 
@@ -1613,7 +1621,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     military_to_t90woo(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                       icon_unit.ID,
-                      "Has Converted All Military To Wolves!")
+                      "Converted All Military To Wolves!")
 
     icon_unit = UnitInfo.ARCHER
     perk_setup("cycle archer line",
@@ -1628,7 +1636,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     cycle_archer_line(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                       icon_unit.ID,
-                      "Has Cycled The Archer Line!")
+                      "Cycled The Archer Line!")
 
     icon_unit = UnitInfo.HALBERDIER
     perk_setup("replace militia with spear",
@@ -1642,7 +1650,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     replace_maa_spear(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                       icon_unit.ID,
-                      "Has Replaced Swordsman Line With Spearman Line!")
+                      "Replaced Swordsman Line With Spearman Line!")
 
     icon_unit = UnitInfo.IMPERIAL_SKIRMISHER
     perk_setup("replace arhcer with skirmisher",
@@ -1656,7 +1664,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     replace_archer_skirms(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                           icon_unit.ID,
-                          "Has Replaced Archer Line With Skirmisher Line!")
+                          "Replaced Archer Line With Skirmisher Line!")
 
     icon_unit = UnitInfo.SIEGE_TOWER
     perk_setup("replace siege petard trebs",
@@ -1670,7 +1678,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     replace_siege_petards_petards_trebs(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                                         icon_unit.ID,
-                                        "Has Replaced Siege With Petards And Petards With Trebuchets!")
+                                        "Replaced Siege With Petards And Petards With Trebuchets!")
 
     # TEN
 
@@ -1686,7 +1694,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     idle_eco(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                                         icon_unit.ID,
-                                        "Has Petrified Enemy Villagers!")
+                                        "Petrified Enemy Villagers!")
 
     icon_unit = UnitInfo.MERCHANT
     perk_setup("labour strike",
@@ -1700,7 +1708,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     labour_strike(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                                         icon_unit.ID,
-                                        "Has Caused A Labour Strike In The Enemy Nations!")
+                                        "Caused A Labour Strike In The Enemy Nations!")
 
     icon_unit = UnitInfo.KNIGHT
     perk_setup("replace kt with sc",
@@ -1714,7 +1722,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     replace_kt_lc(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                   icon_unit.ID,
-                  "Has Replaced The Knight Line With Scout Line!")
+                  "Replaced The Knight Line With Scout Line!")
 
     icon_unit = UnitInfo.CAMEL_RIDER
     perk_setup("replace camels with sc",
@@ -1728,7 +1736,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     replace_camel_lc(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                      icon_unit.ID,
-                     "Has Replaced The Camel Line With Scout Line!")
+                     "Replaced The Camel Line With Scout Line!")
 
     icon_unit = UnitInfo.BATTLE_ELEPHANT
     perk_setup("replace ele with sc",
@@ -1742,7 +1750,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     replace_ele_lc(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                    icon_unit.ID,
-                   "Has Replaced The Battle Elephant Line With Scout Line!")
+                   "Replaced The Battle Elephant Line With Scout Line!")
 
     # FIFTEEN
 
@@ -1758,7 +1766,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     replace_sl_lc(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
                   icon_unit.ID,
-                  "Has Replaced The Steppe Lancer Line With Scout Line!")
+                  "Replaced The Steppe Lancer Line With Scout Line!")
 
     icon_unit = UnitInfo.ALFRED_THE_ALPACA
     CD_HEROES.append(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT])
@@ -1775,7 +1783,7 @@ for NUMBER_OF_PLAYERS in range(1, 9):
 
     dope(TRIGGER_UNITS[CURRENT_TRIGGER_UNIT],
          icon_unit.ID,
-         "Has Doped Their Villagers For 60s!")
+         "Doped Their Villagers For 60s!")
 
     page_unit = HeroInfo.WILLIAM_WALLACE.ID
     perk_setup("change pages",
