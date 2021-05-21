@@ -32,6 +32,6 @@ Players can create trade workshops for 200W and 50S and buy the following perks:
 14. Convert enemy camel line units to scout line units for 1200W and 100G per enemy player
 15. Convert enemy elephant line units to scout line units for 2000W and 150G per enemy player
 16. Convert enemy steppe lancer line units to scout line units for 1300W and 100G per enemy player
-17. Double your own villagers' (and fishing ships') work rates for 60s (Cooldown: 300s) for 1000W and 200G and 200S 
+17. Double your own villagers' (and fishing ships') work rates for 60s (Cooldown: 300s) for 1000W and 200G and 200S 
 
-If you find a bug please message me on Discord at Alian713#0069!
+Disabled: Spies and Wonders
