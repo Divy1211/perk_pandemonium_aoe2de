@@ -5,7 +5,7 @@ The ingame mod can be found [here](https://www.ageofempires.com/mods/details/197
 # Dependencies
 This requires installing the [AoE2ScenarioParser](https://github.com/KSneijders/AoE2ScenarioParser) library:
 
-1. `pip install AoE2ScenarioParser==0.1.8`
+1. `pip install AoE2ScenarioParser`
 
 # How to run the program:
 Navigate to the `parser_projects/maps/` folder and then do `py perk_pandemonium.py`
